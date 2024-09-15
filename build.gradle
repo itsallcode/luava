@@ -9,19 +9,32 @@ repositories {
 
 dependencies {
     testImplementation libs.junit.jupiter
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation libs.guava
+    testImplementation libs.hamcrest
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(22)
     }
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+testing {
+    suites {
+        test {
+            useJUnitJupiter(libs.versions.junit.jupiter)
+            targets {
+                all {
+                    testTask.configure {
+                        systemProperty 'java.util.logging.config.file', 'src/test/resources/logging.properties'
+                        systemProperty 'jextract.trace.downcalls', 'true'
+                        environment "LD_LIBRARY_PATH", "${project.buildDir}/lua-install/lib/"
+                    }
+                }
+            }
+        }
+    }
 }
+
 
 task buildLua(type: Exec) {
     def luaSrc = "${projectDir}/lua"
@@ -34,21 +47,20 @@ task buildLua(type: Exec) {
 
 task generateNativeInterface(type: Exec, dependsOn: [tasks.buildLua]) {
     def installDir = tasks.buildLua.outputs.files[0]
-    def generatedSrc = "${project.buildDir}/generated/jextract/"
+    def generatedSrc = "${project.buildDir}/generated/sources/jextract/"
     commandLine 'jextract',
-                '--source',
                 '--include-dir', "$installDir/include",
                 '--output', generatedSrc,
                 '--target-package', 'org.itsallcode.jlua.ffi',
                 '--library', 'lua',
                 '--header-class-name', 'Lua',
-                "$installDir/include/lua.h"
+                "$projectDir/lua/src/all_lua.h"
     inputs.dir(installDir)
     outputs.dir(generatedSrc)
 }
 
 compileJava {
-    options.compilerArgs += ['--enable-preview', '-Xlint:all,-preview', '-Werror']
+    options.compilerArgs += ['--enable-preview', '-Xlint:all,-preview,-restricted', '-Werror']
 }
 
 sourceSets {

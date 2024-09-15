@@ -8,9 +8,9 @@
             "mainClass": "org.itsallcode.jlua.Test",
             "projectName": "jlua",
             "env": {
-                "LD_LIBRARY_PATH": "${workspaceFolder}/lua/src/"
+                "LD_LIBRARY_PATH": "${workspaceFolder}/build/lua-install/lib/"
             },
-            "vmArgs": "--enable-preview --enable-native-access=ALL-UNNAMED"
+            "vmArgs": "--enable-preview --enable-native-access=ALL-UNNAMED -Djextract.trace.downcalls=true"
         }
     ]
 }

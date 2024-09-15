@@ -13,7 +13,11 @@
     "java.test.config": {
         "vmArgs": [
             "-Djava.util.logging.config.file=src/test/resources/logging.properties",
-        ]
+            "-Djextract.trace.downcalls=true"
+        ],
+        "env": {
+            "LD_LIBRARY_PATH": "${workspaceFolder}/build/lua-install/lib/"
+        }
     },
     "files.exclude": {
         "build/generated/jextract": false

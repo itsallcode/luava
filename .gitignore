@@ -6,3 +6,4 @@
 /lua/src/liblua.a
 /lua/src/lua
 /lua/src/luac
+/hs_err_pid*.log
