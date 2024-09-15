@@ -29,13 +29,19 @@ class LuaInterpreterTest {
     }
 
     @Test
+    void compileFails() {
+        assertFails(() -> lua.exec("invalid"),
+                "[string \"invalid\"]:1: syntax error near <eof>");
+    }
+
+    @Test
     void executionFails() {
         assertFails(() -> lua.exec("invalid('hello world')"),
                 "[string \"invalid('hello world')\"]:1: attempt to call a nil value (global 'invalid')");
     }
 
     void assertFails(final Executable executable, final String expectedErrorMessage) {
-        final LuaException exception = assertThrows(LuaException.class, executable);
+        final FunctionCallException exception = assertThrows(FunctionCallException.class, executable);
         assertThat(exception.getRootError(), equalTo(expectedErrorMessage));
     }
 }
