@@ -1,3 +1,8 @@
 /.gradle
 /build/
 /bin/
+/lua/src/*.o
+/lua/src/liblua.so
+/lua/src/liblua.a
+/lua/src/lua
+/lua/src/luac

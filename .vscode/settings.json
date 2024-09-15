@@ -15,5 +15,11 @@
             "-Djava.util.logging.config.file=src/test/resources/logging.properties",
         ]
     },
+    "files.exclude": {
+        "build/generated/jextract": false
+    },
+    "search.exclude": {
+        "build/generated/jextract": false,
+    },
     "java.compile.nullAnalysis.mode": "automatic",
 }

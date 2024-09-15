@@ -1,7 +1,6 @@
 plugins {
     id 'java-library'
     id "com.github.ben-manes.versions" version "0.51.0"
-    id "io.github.krakowski.jextract" version "0.5.0"
 }
 
 repositories {
@@ -24,13 +23,28 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
-def luaSrc = file("~/dev/lua-5.4.7").absolutePath
-jextract {
-    header("${luaSrc}/src/lua.h") {
-        libraries = [ 'lua' ]
-        includes = ["$luaSrc/src"]
-        targetPackage = 'org.itsallcode.jlua.ffi'
-    }
+task buildLua(type: Exec) {
+    def luaSrc = "${projectDir}/lua"
+    def installDir = "${project.buildDir}/lua-install"
+    workingDir luaSrc
+    commandLine 'make', 'all', 'install', "INSTALL_TOP=$installDir"
+    inputs.dir(luaSrc)
+    outputs.dir(installDir)
+}
+
+task generateNativeInterface(type: Exec, dependsOn: [tasks.buildLua]) {
+    def installDir = tasks.buildLua.outputs.files[0]
+    def generatedSrc = "${project.buildDir}/generated/jextract/"
+    commandLine 'jextract',
+                '--source',
+                '--include-dir', "$installDir/include",
+                '--output', generatedSrc,
+                '--target-package', 'org.itsallcode.jlua.ffi',
+                '--library', 'lua',
+                '--header-class-name', 'Lua',
+                "$installDir/include/lua.h"
+    inputs.dir(installDir)
+    outputs.dir(generatedSrc)
 }
 
 compileJava {
@@ -38,7 +52,9 @@ compileJava {
 }
 
 sourceSets {
-  main {
-    //java.srcDirs += "${project.buildDir}/generated/sources/jextract/main/java/"
-  }
+    main {
+        java {
+            srcDir(generateNativeInterface)
+        }
+    }
 }
