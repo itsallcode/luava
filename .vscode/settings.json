@@ -25,5 +25,5 @@
     "search.exclude": {
         "build/generated/jextract": false,
     },
-    "java.compile.nullAnalysis.mode": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic"
 }
