@@ -50,10 +50,11 @@ class LuaStackTest {
         assertThat(stack.toInteger(-1), equalTo(42L));
     }
 
-    @Test
-    void pushBoolean() {
-        stack.pushBoolean(true);
-        assertThat(stack.toBoolean(-1), equalTo(true));
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void pushBoolean(final boolean value) {
+        stack.pushBoolean(value);
+        assertThat(stack.toBoolean(-1), equalTo(value));
     }
 
     @Test

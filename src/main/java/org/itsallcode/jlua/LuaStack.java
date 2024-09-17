@@ -50,7 +50,7 @@ class LuaStack {
 
     void pushLString(final String value) {
         final MemorySegment segment = arena.allocateFrom(value);
-        Lua.lua_pushlstring(state, segment, segment.byteSize());
+        Lua.lua_pushlstring(state, segment, segment.byteSize() - 1);
     }
 
     void pop(final int n) {
@@ -82,25 +82,19 @@ class LuaStack {
     }
 
     double toNumber(final int idx) {
-        if (!isNumber(idx)) {
-            throw new LuaException("Expected number at index " + idx + " but was " + getType(idx));
-        }
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final double value = Lua.lua_tonumberx(state, idx, isNumber);
         if (isNumber.get(Lua.C_INT, 0) != 1) {
-            throw new LuaException("No number at index " + idx);
+            throw new LuaException("No number at index " + idx + " but is " + getType(idx));
         }
         return value;
     }
 
     long toInteger(final int idx) {
-        if (!isInteger(idx)) {
-            throw new LuaException("Expected integer at index " + idx + " but was " + getType(idx));
-        }
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final long value = Lua.lua_tointegerx(state, idx, isNumber);
         if (isNumber.get(Lua.C_INT, 0) != 1) {
-            throw new LuaException("No integer at index " + idx);
+            throw new LuaException("No integer at index " + idx + " but is " + getType(idx));
         }
         return value;
     }

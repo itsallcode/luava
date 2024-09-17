@@ -40,6 +40,27 @@ class LuaInterpreterTest {
                 "[string \"invalid('hello world')\"]:1: attempt to call a nil value (global 'invalid')");
     }
 
+    @Test
+    void getGlobal() {
+        lua.exec("var = 'hello'");
+        assertThat(lua.getGlobalString("var"), equalTo("hello"));
+    }
+
+    @Test
+    void getGlobalMultipleTimes() {
+        lua.exec("var1 = 'hello1'; var2 = 'hello2'");
+        assertThat(lua.getGlobalString("var1"), equalTo("hello1"));
+        assertThat(lua.getGlobalString("var2"), equalTo("hello2"));
+    }
+
+    @Test
+    void setGetGlobalString() {
+        lua.setString("input", "value");
+        lua.exec("result = '/' .. input .. '/'");
+        final String globalString = lua.getGlobalString("result");
+        assertThat(globalString, equalTo("/value/"));
+    }
+
     void assertFails(final Executable executable, final String expectedErrorMessage) {
         final FunctionCallException exception = assertThrows(FunctionCallException.class, executable);
         assertThat(exception.getRootError(), equalTo(expectedErrorMessage));

@@ -55,6 +55,14 @@ class LowLevelLua implements AutoCloseable {
         }
     }
 
+    void getGlobal(final String name) {
+        Lua.lua_getglobal(state, arena.allocateFrom(name));
+    }
+
+    void setGlobal(final String name) {
+        Lua.lua_setglobal(state, arena.allocateFrom(name));
+    }
+
     LuaStack stack() {
         return stack;
     }
