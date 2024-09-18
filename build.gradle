@@ -28,6 +28,8 @@ testing {
                         systemProperty 'java.util.logging.config.file', 'src/test/resources/logging.properties'
                         systemProperty 'jextract.trace.downcalls', 'true'
                         environment "LD_LIBRARY_PATH", "${project.buildDir}/lua-install/lib/"
+                        environment "DYLD_LIBRARY_PATH", "${project.buildDir}/lua-install/lib/"
+                        jvmArgs '--enable-native-access=ALL-UNNAMED'
                     }
                 }
             }
