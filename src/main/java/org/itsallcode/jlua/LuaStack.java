@@ -75,7 +75,7 @@ class LuaStack {
         final byte[] bytes = result.reinterpret(stringLength).toArray(Lua.C_CHAR);
 
         int length = bytes.length;
-        if (bytes[bytes.length - 1] == 0x0) {
+        if (bytes.length > 0 && bytes[bytes.length - 1] == 0x0) {
             length = length - 1;
         }
         return new String(bytes, 0, length, StandardCharsets.UTF_8);
