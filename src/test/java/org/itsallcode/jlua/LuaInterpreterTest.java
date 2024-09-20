@@ -92,6 +92,25 @@ class LuaInterpreterTest {
     }
 
     @Test
+    void getCallGlobalFunction() {
+        lua.exec("function increment(x) return x+1 end");
+        final LuaFunction function = lua.getGlobalFunction("increment");
+        function.addArgInteger(42);
+        function.call(1, 1);
+        assertThat(function.getIntegerResult(), equalTo(43L));
+    }
+
+    @Test
+    void getCallGlobalFunctionFails() {
+        lua.exec("function increment(x) error('failure') end");
+        final LuaFunction function = lua.getGlobalFunction("increment");
+        function.addArgInteger(42);
+        final LuaException exception = assertThrows(LuaException.class, () -> function.call(1, 1));
+        assertThat(exception.getMessage(), equalTo(
+                "Function 'lua_pcallk' failed with error 2: [string \"function increment(x) error('failure') end\"]:1: failure"));
+    }
+
+    @Test
     void getTableStringValue() {
         lua.exec("result = { key = 'value' }");
         final LuaTable table = lua.getGlobalTable("result");
@@ -139,7 +158,7 @@ class LuaInterpreterTest {
     void getTableStringFailsWrongType() {
         lua.exec("result = 'not a table'");
         final LuaException exception = assertThrows(LuaException.class, () -> lua.getGlobalTable("result"));
-        assertThat(exception.getMessage(), equalTo("Expected table on the stack but got STRING"));
+        assertThat(exception.getMessage(), equalTo("Expected TABLE at -1 but got STRING"));
     }
 
 

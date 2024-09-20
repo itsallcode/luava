@@ -51,6 +51,11 @@ public class LuaInterpreter implements AutoCloseable {
         return lua.table(-1);
     }
 
+    public LuaFunction getGlobalFunction(final String name) {
+        lua.getGlobal(name);
+        return lua.function(-1);
+    }
+
     public void setGlobalString(final String name, final String value) {
         lua.stack().pushString(value);
         lua.setGlobal(name);
