@@ -99,6 +99,43 @@ class LuaInterpreterTest {
     }
 
     @Test
+    void getTableIntegerValue() {
+        lua.exec("result = { key = 42 }");
+        final LuaTable table = lua.getGlobalTable("result");
+        assertThat(table.getInteger("key"), equalTo(42L));
+    }
+
+    @Test
+    void getTableIntegerValueButIsDouble() {
+        lua.exec("result = { key = 42.2 }");
+        final LuaTable table = lua.getGlobalTable("result");
+        final LuaException exception = assertThrows(LuaException.class, () -> table.getInteger("key"));
+        assertThat(exception.getMessage(), equalTo("No integer at index -1 but is NUMBER"));
+    }
+
+    @Test
+    void getTableNumberValue() {
+        lua.exec("result = { key = 3.14 }");
+        final LuaTable table = lua.getGlobalTable("result");
+        assertThat(table.getNumber("key"), equalTo(3.14));
+    }
+
+    @Test
+    void getTableBooleanValue() {
+        lua.exec("result = { key = true }");
+        final LuaTable table = lua.getGlobalTable("result");
+        assertThat(table.getBoolean("key"), equalTo(true));
+    }
+
+    @Test
+    void getTableValueWrongType() {
+        lua.exec("result = { key = 42 }");
+        final LuaTable table = lua.getGlobalTable("result");
+        final LuaException exception = assertThrows(LuaException.class, () -> table.getString("key"));
+        assertThat(exception.getMessage(), equalTo("Expected field 'key' of type STRING but was NUMBER"));
+    }
+
+    @Test
     void getTableStringFailsWrongType() {
         lua.exec("result = 'not a table'");
         final LuaException exception = assertThrows(LuaException.class, () -> lua.getGlobalTable("result"));

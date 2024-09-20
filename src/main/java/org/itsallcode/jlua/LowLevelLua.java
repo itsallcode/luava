@@ -72,7 +72,7 @@ class LowLevelLua implements AutoCloseable {
         if (type != LuaType.TABLE) {
             throw new LuaException("Expected table on the stack but got " + type);
         }
-        return new LuaTable(state, stack, idx);
+        return new LuaTable(state, stack, arena, idx);
     }
 
     boolean isYieldable() {
