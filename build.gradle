@@ -37,6 +37,23 @@ testing {
     }
 }
 
+task downloadJextract(type: DownloadTask) {
+    OperatingSystem currentOs = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem
+    def os = ""
+    if(currentOs.isMacOsX()){
+        os="macos"
+    } else if(currentOs.isLinux()) {
+        os="linux"
+    }
+    def arch = "x64"
+    sourceUrl = "https://download.java.net/java/early_access/jextract/22/5/openjdk-22-jextract+5-33_${os}-${arch}_bin.tar.gz"
+    target = file("${project.buildDir}/jextract.tar.gz")
+}
+
+task unpackJextract(type: Copy, dependsOn: [tasks.downloadJextract]) {
+    from tarTree(resources.gzip(tasks.downloadJextract.outputs.files[0]))
+    into file("${project.buildDir}/jextract/")
+}
 
 task buildLua(type: Exec) {
     def luaSrc = "${projectDir}/lua"
@@ -47,10 +64,11 @@ task buildLua(type: Exec) {
     outputs.dir(installDir)
 }
 
-task generateNativeInterface(type: Exec, dependsOn: [tasks.buildLua]) {
+task generateNativeInterface(type: Exec, dependsOn: [tasks.buildLua, tasks.unpackJextract]) {
+    def jextractBinary = "${tasks.unpackJextract.outputs.files[0]}/jextract-22/bin/jextract"
     def installDir = tasks.buildLua.outputs.files[0]
     def generatedSrc = "${project.buildDir}/generated/sources/jextract/"
-    commandLine 'jextract',
+    commandLine jextractBinary,
                 '--include-dir', "$installDir/include",
                 '--output', generatedSrc,
                 '--target-package', 'org.itsallcode.jlua.ffi',

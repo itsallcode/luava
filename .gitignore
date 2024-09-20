@@ -1,5 +1,7 @@
 /.gradle
+/buildSrc/.gradle/
 /build/
+/buildSrc/build/
 /bin/
 /lua/src/*.o
 /lua/src/liblua.so
