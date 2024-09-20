@@ -9,6 +9,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class LuaInterpreterTest {
     private LuaInterpreter lua;
@@ -53,13 +55,56 @@ class LuaInterpreterTest {
         assertThat(lua.getGlobalString("var2"), equalTo("hello2"));
     }
 
-    @Test
-    void setGetGlobalString() {
-        lua.setString("input", "value");
+    @ParameterizedTest
+    @ValueSource(strings = { "", "\0", "some text", "öäüß", "zero\0byte" })
+    void setGetGlobalString(final String value) {
+        lua.setGlobalString("input", value);
         lua.exec("result = '/' .. input .. '/'");
         final String globalString = lua.getGlobalString("result");
-        assertThat(globalString, equalTo("/value/"));
+        assertThat(globalString, equalTo("/" + value + "/"));
     }
+
+    @ParameterizedTest
+    @ValueSource(longs = { Long.MIN_VALUE, Long.MAX_VALUE, -1, 0, -1 })
+    void setGetGlobalInteger(final long value) {
+        lua.setGlobalInteger("input", value);
+        lua.exec("result = input");
+        final long globalInteger = lua.getGlobalInteger("result");
+        assertThat(globalInteger, equalTo(value));
+    }
+
+    @ParameterizedTest
+    @ValueSource(doubles = { Double.MIN_NORMAL, Double.MIN_VALUE, Double.MAX_VALUE, -1, 0, 1, Math.PI })
+    void setGetGlobalNumber(final double value) {
+        lua.setGlobalNumber("input", value);
+        lua.exec("result = input");
+        final double globalNumber = lua.getGlobalNumber("result");
+        assertThat(globalNumber, equalTo(value));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void setGetGlobalBoolean(final boolean value) {
+        lua.setGlobalBoolean("input", value);
+        lua.exec("result = input");
+        final boolean globalBoolean = lua.getGlobalBoolean("result");
+        assertThat(globalBoolean, equalTo(value));
+    }
+
+    @Test
+    void getTableStringValue() {
+        lua.exec("result = { key = 'value' }");
+        final LuaTable table = lua.getGlobalTable("result");
+        assertThat(table.getString("key"), equalTo("value"));
+    }
+
+    @Test
+    void getTableStringFailsWrongType() {
+        lua.exec("result = 'not a table'");
+        final LuaException exception = assertThrows(LuaException.class, () -> lua.getGlobalTable("result"));
+        assertThat(exception.getMessage(), equalTo("Expected table on the stack but got STRING"));
+    }
+
 
     void assertFails(final Executable executable, final String expectedErrorMessage) {
         final FunctionCallException exception = assertThrows(FunctionCallException.class, executable);

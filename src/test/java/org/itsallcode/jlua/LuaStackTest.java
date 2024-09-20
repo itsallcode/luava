@@ -27,7 +27,7 @@ class LuaStackTest {
     @ParameterizedTest
     @ValueSource(strings = { "", "abc", "öäüß", "!§$%&", "String with \0 zero" })
     void pushString(final String value) {
-        stack.pushLString(value);
+        stack.pushString(value);
         final String actual = stack.toString(-1);
         assertThat(actual, equalTo(value));
     }

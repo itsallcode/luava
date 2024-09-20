@@ -48,7 +48,7 @@ class LuaStack {
         Lua.lua_pushinteger(state, n);
     }
 
-    void pushLString(final String value) {
+    void pushString(final String value) {
         final MemorySegment segment = arena.allocateFrom(value);
         Lua.lua_pushlstring(state, segment, segment.byteSize() - 1);
     }
