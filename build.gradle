@@ -54,6 +54,8 @@ task downloadJextract(type: DownloadTask) {
         switch(arch) {
             case "amd64":
                 return "x64"
+            case "aarch64":
+                return "aarch64"
             default:
                 throw new IllegalStateException("Unsupported architecture: ${arch}")
         }
