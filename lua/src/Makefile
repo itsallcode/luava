@@ -63,6 +63,8 @@ a:	$(ALL_A)
 
 so:	$(LUA_SO)
 
+dylib:	$(LUA_DYLIB)
+
 $(LUA_SO): $(CORE_O) $(LIB_O)
 	$(CC) -o $@ -shared $?
 

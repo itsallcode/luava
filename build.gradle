@@ -14,7 +14,8 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(22)
+        def javaVersion = project.hasProperty('javaVersion') ? project.getProperty('javaVersion') : 22
+        languageVersion = JavaLanguageVersion.of(javaVersion)
     }
 }
 
