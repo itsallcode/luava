@@ -27,8 +27,8 @@ testing {
                     testTask.configure {
                         systemProperty 'java.util.logging.config.file', 'src/test/resources/logging.properties'
                         systemProperty 'jextract.trace.downcalls', 'true'
-                        environment "LD_LIBRARY_PATH", "${project.buildDir}/lua-install/lib/"
-                        environment "DYLD_LIBRARY_PATH", "${project.buildDir}/lua-install/lib/"
+                        environment "LD_LIBRARY_PATH", "${project.buildDir}/lua-libs/"
+                        environment "DYLD_LIBRARY_PATH", "${project.buildDir}/lua-libs/"
                         jvmArgs '--enable-native-access=ALL-UNNAMED'
                     }
                 }
@@ -90,6 +90,9 @@ task buildLua(type: Exec) {
         }
     }
 }
+
+tasks.test.dependsOn(tasks.buildLua)
+tasks.build.dependsOn(tasks.buildLua)
 
 task cleanLua(type: Exec) {
     workingDir "${projectDir}/lua/src"
