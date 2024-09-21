@@ -61,6 +61,8 @@ o:	$(ALL_O)
 
 a:	$(ALL_A)
 
+so:	$(LUA_SO)
+
 $(LUA_SO): $(CORE_O) $(LIB_O)
 	$(CC) -o $@ -shared $?
 

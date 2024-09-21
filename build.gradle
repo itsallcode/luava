@@ -37,16 +37,27 @@ testing {
     }
 }
 
+OperatingSystem currentOs = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem
 task downloadJextract(type: DownloadTask) {
-    OperatingSystem currentOs = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem
-    def os = ""
-    if(currentOs.isMacOsX()){
-        os="macos"
-    } else if(currentOs.isLinux()) {
-        os="linux"
+    def getOs = {
+        if(currentOs.isMacOsX()) {
+            return "macos"
+        }
+        if(currentOs.isLinux()) {
+            return "linux"
+        }
+        throw new IllegalStateException("Unsupported operating system: ${currentOs}")
     }
-    def arch = "x64"
-    sourceUrl = "https://download.java.net/java/early_access/jextract/22/5/openjdk-22-jextract+5-33_${os}-${arch}_bin.tar.gz"
+    def getArch = {
+        def arch = System.getProperty("os.arch")
+        switch(arch) {
+            case "amd64":
+                return "x64"
+            default:
+                throw new IllegalStateException("Unsupported architecture: ${arch}")
+        }
+    }
+    sourceUrl = "https://download.java.net/java/early_access/jextract/22/5/openjdk-22-jextract+5-33_${getOs()}-${getArch()}_bin.tar.gz"
     target = file("${project.buildDir}/jextract.tar.gz")
 }
 
@@ -56,27 +67,53 @@ task unpackJextract(type: Copy, dependsOn: [tasks.downloadJextract]) {
 }
 
 task buildLua(type: Exec) {
-    def luaSrc = "${projectDir}/lua"
-    def installDir = "${project.buildDir}/lua-install"
+    def getMakeGoal = {
+        if(currentOs.isLinux()) {
+            return "so"
+        }
+        if(currentOs.isMacOsX()) {
+            return "dylib"
+        }
+        throw new IllegalStateException("Unsupported operating system: ${currentOs}")
+    }
+    def luaSrc = "${projectDir}/lua/src"
+    def installDir = "${project.buildDir}/lua-libs"
     workingDir luaSrc
-    commandLine 'make', 'all', 'install', "INSTALL_TOP=$installDir"
+    commandLine 'make', getMakeGoal()
     inputs.dir(luaSrc)
     outputs.dir(installDir)
+    doLast {
+        copy {
+            from luaSrc
+            into installDir
+            include "liblua.*"
+        }
+    }
 }
 
-task generateNativeInterface(type: Exec, dependsOn: [tasks.buildLua, tasks.unpackJextract]) {
+task cleanLua(type: Exec) {
+    workingDir "${projectDir}/lua/src"
+    commandLine 'make', 'clean'
+}
+
+clean.dependsOn(tasks.cleanLua)
+
+task generateNativeInterface(type: Exec, dependsOn: [tasks.unpackJextract]) {
     def jextractBinary = "${tasks.unpackJextract.outputs.files[0]}/jextract-22/bin/jextract"
-    def installDir = tasks.buildLua.outputs.files[0]
+    def includeDir = "${project.rootDir}/lua/src"
     def generatedSrc = "${project.buildDir}/generated/sources/jextract/"
     commandLine jextractBinary,
-                '--include-dir', "$installDir/include",
+                '--include-dir', includeDir,
                 '--output', generatedSrc,
                 '--target-package', 'org.itsallcode.jlua.ffi',
                 '--library', 'lua',
                 '--header-class-name', 'Lua',
-                "$projectDir/lua/src/all_lua.h"
-    inputs.dir(installDir)
+                "$includeDir/all_lua.h"
+    inputs.dir(includeDir)
     outputs.dir(generatedSrc)
+    doLast {
+
+    }
 }
 
 compileJava {
