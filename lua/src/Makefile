@@ -34,8 +34,6 @@ PLATS= guess aix bsd c89 freebsd generic ios linux linux-readline macosx mingw p
 
 LUA_SO=	liblua.so
 LUA_DYLIB=	liblua.dylib
-liblua.dylib: $(CORE_O) $(LIB_O)
-	$(CC) -dynamiclib -o $@ $^ $(LIBS) -arch x86_64 -compatibility_version 5.4.0 -current_version 5.4.0 -install_name @rpath/$@
 
 LUA_A=	liblua.a
 CORE_O=	lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o
@@ -49,7 +47,7 @@ LUAC_T=	luac
 LUAC_O=	luac.o
 
 ALL_O= $(BASE_O) $(LUA_O) $(LUAC_O)
-ALL_T= $(LUA_A) $(LUA_T) $(LUAC_T) $(LUA_SO)
+ALL_T= $(LUA_A) $(LUA_T) $(LUAC_T) $(LUA_SO) $(LUA_DYLIB)
 ALL_A= $(LUA_A)
 
 # Targets start here.
@@ -67,6 +65,9 @@ dylib:	$(LUA_DYLIB)
 
 $(LUA_SO): $(CORE_O) $(LIB_O)
 	$(CC) -o $@ -shared $?
+
+$(LUA_DYLIB): $(CORE_O) $(LIB_O)
+	$(CC) -dynamiclib -o $@ $^ $(LIBS)
 
 $(LUA_A): $(BASE_O)
 	$(AR) $@ $(BASE_O)
