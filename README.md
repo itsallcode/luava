@@ -15,7 +15,13 @@ An experimental Java library for embedding a Lua VM.
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=org.itsallcode%3Aluava&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=org.itsallcode%3Aluava)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=org.itsallcode%3Aluava&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=org.itsallcode%3Aluava)
 
+This project allows executing Lua scripts from a Java application. It uses [Foreign Function & Memory API (JEP 454)](https://openjdk.org/jeps/454) for accessing the Lua C API.
+
 ## Development
+
+### Native Interface
+
+Build scripts generate native interface classes in `build/generated/sources/jextract` using [Jextract](https://github.com/openjdk/jextract). Scripts download and cache Jextract automatically during the build.
 
 ### Check for Dependency Updates
 
