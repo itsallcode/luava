@@ -1,10 +1,13 @@
 package org.itsallcode.luava;
 
+import java.lang.foreign.MemorySegment;
+import java.util.function.Function;
+
 public class LuaInterpreter implements AutoCloseable {
 
     private final LowLevelLua lua;
 
-    public LuaInterpreter(final LowLevelLua lua) {
+    private LuaInterpreter(final LowLevelLua lua) {
         this.lua = lua;
     }
 
@@ -16,6 +19,10 @@ public class LuaInterpreter implements AutoCloseable {
 
     public void close() {
         this.lua.close();
+    }
+
+    LuaStack stack() {
+        return lua.stack();
     }
 
     public String getGlobalString(final String name) {
@@ -52,8 +59,19 @@ public class LuaInterpreter implements AutoCloseable {
     }
 
     public LuaFunction getGlobalFunction(final String name) {
+        return this.getGlobalFunction(name, null);
+    }
+
+    public LuaFunction getGlobalFunction(final String name, final Function<LuaInterpreter, Integer> messageHandler) {
+        int errorHandlerIdx = 0;
+        if (messageHandler != null) {
+            lua.stack().pushCFunction((final MemorySegment newState) -> {
+                return messageHandler.apply(new LuaInterpreter(this.lua.forState(newState)));
+            });
+            errorHandlerIdx = lua.stack().getTop();
+        }
         lua.getGlobal(name);
-        return lua.function(-1);
+        return lua.function(-1, errorHandlerIdx);
     }
 
     public void setGlobalString(final String name, final String value) {
@@ -78,7 +96,6 @@ public class LuaInterpreter implements AutoCloseable {
 
     public void exec(final String chunk) {
         lua.loadString(chunk);
-        lua.pcall(0, 0, 0, 0);
+        lua.pcall(0, 0);
     }
-
 }

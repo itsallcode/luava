@@ -5,6 +5,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
 
 import org.itsallcode.luava.ffi.Lua;
+import org.itsallcode.luava.ffi.lua_CFunction;
 
 class LuaStack {
     private final MemorySegment state;
@@ -53,12 +54,28 @@ class LuaStack {
         Lua.lua_pushlstring(state, segment, segment.byteSize() - 1);
     }
 
+    void pushCFunction(final lua_CFunction.Function fn) {
+        pushClosure(fn, 0);
+    }
+
+    void pushClosure(final lua_CFunction.Function fn, final int n) {
+        final MemorySegment functionSegment = lua_CFunction.allocate(fn, arena);
+        Lua.lua_pushcclosure(state, functionSegment, n);
+    }
+
     void pop(final int n) {
+        final int size = getTop();
+        if (n > size) {
+            throw new IllegalStateException("Trying to pop " + n + " elements but stack has size " + size);
+        }
+        System.out.println("Popping " + n + " elements from stack with size " + size);
         setTop(-n - 1);
     }
 
     void setTop(final int n) {
+        System.out.println(this.printStack());
         Lua.lua_settop(state, n);
+        System.out.println(this.printStack());
     }
 
     boolean toBoolean(final int idx) {
@@ -101,5 +118,33 @@ class LuaStack {
 
     int getTop() {
         return Lua.lua_gettop(state);
+    }
+
+    String printStack() {
+        final StringBuilder b = new StringBuilder();
+        final int top = this.getTop();
+        b.append("Stack size: " + top + ": ");
+        for (int idx = 1; idx <= top; idx++) {
+            b.append(format(idx));
+            if (idx < top) {
+                b.append(", ");
+            }
+        }
+        return b.toString();
+    }
+
+    private String format(final int idx) {
+        final LuaType type = getType(idx);
+        final String result = "#" + idx + " " + type;
+        final String value = switch (type) {
+            case STRING -> toString(idx);
+            case NUMBER -> String.valueOf(toNumber(idx));
+            case BOOLEAN -> String.valueOf(toBoolean(idx));
+            default -> "";
+        };
+        if (!value.isEmpty()) {
+            return result + ": " + value;
+        }
+        return result;
     }
 }

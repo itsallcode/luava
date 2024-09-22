@@ -2,17 +2,17 @@ package org.itsallcode.luava;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.function.Supplier;
 
 import org.itsallcode.luava.ffi.Lua;
 import org.itsallcode.luava.ffi.lua_KFunction;
-import org.itsallcode.luava.ffi.lua_KFunction.Function;
 
 class LowLevelLua implements AutoCloseable {
     private final Arena arena;
-    private final MemorySegment state;
+    final MemorySegment state;
     private final LuaStack stack;
 
-    private LowLevelLua(final Arena arena, final MemorySegment state) {
+    LowLevelLua(final Arena arena, final MemorySegment state) {
         this.arena = arena;
         this.state = state;
         this.stack = new LuaStack(state, arena);
@@ -24,34 +24,57 @@ class LowLevelLua implements AutoCloseable {
         return new LowLevelLua(arena, state);
     }
 
+    LowLevelLua forState(final MemorySegment newState) {
+        return new LowLevelLua(arena, newState);
+    }
+
     void openLibs() {
         Lua.luaL_openlibs(state);
     }
 
-    void pcall(final int nargs, final int nresults, final int errfunc, final long ctx) {
-        final Function function = (final MemorySegment l, final int status, final long ctx1) -> {
-            return 0;
-        };
-        pcall(nargs, nresults, errfunc, ctx, function);
+    void pcall(final int nargs, final int nresults) {
+        pcallk(nargs, nresults, 0, 0, null);
     }
 
-    void pcall(final int nargs, final int nresults, final int errfunc, final long ctx,
+    void pcall(final int nargs, final int nresults, final int errfunc) {
+        pcallk(nargs, nresults, errfunc, 0, null);
+    }
+
+    /**
+     * This function behaves exactly like {@link #pcall(int, int, int, long)},
+     * except that it allows the
+     * called function to yield.
+     * 
+     * @param nargs
+     * @param nresults
+     * @param msgHandler
+     * @param ctx
+     * @param upcallFunction
+     */
+    void pcallk(final int nargs, final int nresults, final int msgHandler, final long ctx,
             final lua_KFunction.Function upcallFunction) {
-        final MemorySegment k = lua_KFunction.allocate(upcallFunction, arena);
-        final int error = Lua.lua_pcallk(state, nargs, nresults, errfunc, ctx, k);
-        if (error != 0) {
-            final String message = stack.toString(-1);
-            stack.pop(1);
-            throw new FunctionCallException("lua_pcallk", error, message);
-        }
+        final MemorySegment k = upcallFunction == null ? Lua.NULL() : lua_KFunction.allocate(upcallFunction, arena);
+        checkStatus("lua_pcallk", () -> {
+            final int status = Lua.lua_pcallk(state, nargs, nresults, msgHandler, ctx, k);
+            if (msgHandler != 0) {
+                this.stack.pop(1);
+            }
+            return status;
+        });
     }
 
     void loadString(final String chunk) {
-        final int error = Lua.luaL_loadstring(state, arena.allocateFrom(chunk));
-        if (error != 0) {
+        checkStatus("luaL_loadstring", () -> Lua.luaL_loadstring(state, arena.allocateFrom(chunk)));
+    }
+
+    void checkStatus(final String functionName, final Supplier<Integer> nativeFunctionCall) {
+        final int status = nativeFunctionCall.get();
+        if (status != Lua.LUA_OK()) {
+            System.out.println(stack.printStack());
+            System.out.println("Getting error message..");
             final String message = stack.toString(-1);
             stack.pop(1);
-            throw new FunctionCallException("luaL_loadstring", error, message);
+            throw new FunctionCallException(functionName, status, message);
         }
     }
 
@@ -72,9 +95,9 @@ class LowLevelLua implements AutoCloseable {
         return new LuaTable(state, stack, arena, idx);
     }
 
-    public LuaFunction function(final int idx) {
+    public LuaFunction function(final int idx, final Integer errorHandlerIdx) {
         assertType(idx, LuaType.FUNCTION);
-        return new LuaFunction(state, stack, arena, idx);
+        return new LuaFunction(this, arena, idx, errorHandlerIdx);
     }
 
     private void assertType(final int idx, final LuaType expectedType) {
