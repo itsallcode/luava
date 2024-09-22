@@ -30,7 +30,6 @@ class LowLevelLua implements AutoCloseable {
 
     void pcall(final int nargs, final int nresults, final int errfunc, final long ctx) {
         final Function function = (final MemorySegment l, final int status, final long ctx1) -> {
-            System.out.println("Upcall callback");
             return 0;
         };
         pcall(nargs, nresults, errfunc, ctx, function);
