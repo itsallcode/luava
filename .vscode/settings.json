@@ -29,7 +29,7 @@
     },
     "java.compile.nullAnalysis.mode": "automatic",
     "sonarlint.connectedMode.project": {
-        "connectionId": "kaklakariada-github",
+        "connectionId": "itsallcode",
         "projectKey": "luava"
     }
 }

@@ -2,7 +2,7 @@
 
 An experimental Java library for embedding a Lua VM.
 
-[![Build](https://github.com/kaklakariada/java-lua/actions/workflows/build.yml/badge.svg)](https://github.com/kaklakariada/java-lua/actions/workflows/build.yml)
+[![Build](https://github.com/itsallcode/luava/actions/workflows/build.yml/badge.svg)](https://github.com/itsallcode/luava/actions/workflows/build.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=org.itsallcode%3Aluava&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=org.itsallcode%3Aluava)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=org.itsallcode%3Aluava&metric=bugs)](https://sonarcloud.io/summary/new_code?id=org.itsallcode%3Aluava)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=org.itsallcode%3Aluava&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=org.itsallcode%3Aluava)
