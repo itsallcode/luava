@@ -1,4 +1,4 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 public class FunctionCallException extends LuaException {
     private static final long serialVersionUID = 1L;

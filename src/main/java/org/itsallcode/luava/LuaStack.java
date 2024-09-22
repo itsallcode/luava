@@ -1,10 +1,10 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
 
-import org.itsallcode.jlua.ffi.Lua;
+import org.itsallcode.luava.ffi.Lua;
 
 class LuaStack {
     private final MemorySegment state;
