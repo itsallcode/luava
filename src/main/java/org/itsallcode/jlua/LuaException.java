@@ -1,4 +1,4 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 public class LuaException extends RuntimeException {
     private static final long serialVersionUID = 1L;

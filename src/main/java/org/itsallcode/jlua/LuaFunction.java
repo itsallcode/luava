@@ -1,9 +1,9 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import org.itsallcode.jlua.ffi.Lua;
+import org.itsallcode.luava.ffi.Lua;
 
 public class LuaFunction {
 

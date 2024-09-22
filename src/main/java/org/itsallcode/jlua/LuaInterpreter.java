@@ -1,4 +1,4 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 public class LuaInterpreter implements AutoCloseable {
 

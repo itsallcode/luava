@@ -5,6 +5,9 @@ plugins {
     id "org.sonarqube" version "5.1.0.4882"
 }
 
+version = '0.0.1'
+group = 'org.itsallcode'
+
 repositories {
     mavenCentral()
 }
@@ -24,7 +27,7 @@ java {
 javadoc {
     enabled = true
     failOnError = true
-    excludes = ["org/itsallcode/jlua/ffi/**"]
+    excludes = ["org/itsallcode/luava/ffi/**"]
     options.addBooleanOption('html5', true)
     options.addStringOption('Xwerror', '-quiet')
 }
@@ -138,7 +141,7 @@ task generateNativeInterface(type: Exec, dependsOn: [tasks.unpackJextract]) {
     commandLine jextractBinary,
                 '--include-dir', includeDir,
                 '--output', generatedSrc,
-                '--target-package', 'org.itsallcode.jlua.ffi',
+                '--target-package', 'org.itsallcode.luava.ffi',
                 '--library', 'lua',
                 '--header-class-name', 'Lua',
                 "$includeDir/all_lua.h"

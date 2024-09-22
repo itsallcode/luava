@@ -1,4 +1,4 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

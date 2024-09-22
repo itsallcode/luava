@@ -1,8 +1,8 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 import java.util.Arrays;
 
-import org.itsallcode.jlua.ffi.Lua;
+import org.itsallcode.luava.ffi.Lua;
 
 public enum LuaType {
     NONE(Lua.LUA_TNONE()), NIL(Lua.LUA_TNIL()), BOOLEAN(Lua.LUA_TBOOLEAN()), LIGHT_USERDATA(Lua.LUA_TLIGHTUSERDATA()),

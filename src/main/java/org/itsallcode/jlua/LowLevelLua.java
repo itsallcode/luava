@@ -1,11 +1,11 @@
-package org.itsallcode.jlua;
+package org.itsallcode.luava;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-import org.itsallcode.jlua.ffi.Lua;
-import org.itsallcode.jlua.ffi.lua_KFunction;
-import org.itsallcode.jlua.ffi.lua_KFunction.Function;
+import org.itsallcode.luava.ffi.Lua;
+import org.itsallcode.luava.ffi.lua_KFunction;
+import org.itsallcode.luava.ffi.lua_KFunction.Function;
 
 class LowLevelLua implements AutoCloseable {
     private final Arena arena;
@@ -36,7 +36,8 @@ class LowLevelLua implements AutoCloseable {
         pcall(nargs, nresults, errfunc, ctx, function);
     }
 
-    void pcall(final int nargs, final int nresults, final int errfunc, final long ctx, final Function upcallFunction) {
+    void pcall(final int nargs, final int nresults, final int errfunc, final long ctx,
+            final lua_KFunction.Function upcallFunction) {
         final MemorySegment k = lua_KFunction.allocate(upcallFunction, arena);
         final int error = Lua.lua_pcallk(state, nargs, nresults, errfunc, ctx, k);
         if (error != 0) {
