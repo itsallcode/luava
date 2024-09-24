@@ -54,13 +54,7 @@ class LowLevelLua implements AutoCloseable {
     void pcallk(final int nargs, final int nresults, final int msgHandler, final long ctx,
             final lua_KFunction.Function upcallFunction) {
         final MemorySegment k = upcallFunction == null ? Lua.NULL() : lua_KFunction.allocate(upcallFunction, arena);
-        checkStatus("lua_pcallk", () -> {
-            final int status = Lua.lua_pcallk(state, nargs, nresults, msgHandler, ctx, k);
-            if (msgHandler != 0) {
-                this.stack.pop(1);
-            }
-            return status;
-        });
+        checkStatus("lua_pcallk", () -> Lua.lua_pcallk(state, nargs, nresults, msgHandler, ctx, k));
     }
 
     void loadString(final String chunk) {
@@ -70,8 +64,6 @@ class LowLevelLua implements AutoCloseable {
     void checkStatus(final String functionName, final Supplier<Integer> nativeFunctionCall) {
         final int status = nativeFunctionCall.get();
         if (status != Lua.LUA_OK()) {
-            System.out.println(stack.printStack());
-            System.out.println("Getting error message..");
             final String message = stack.toString(-1);
             stack.pop(1);
             throw new FunctionCallException(functionName, status, message);

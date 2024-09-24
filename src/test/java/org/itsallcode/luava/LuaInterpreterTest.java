@@ -114,26 +114,18 @@ class LuaInterpreterTest {
 
     @Test
     void getCallGlobalFunctionWithMessageHandler() {
-        System.out.println(lua.stack().printStack());
         lua.exec("function increment(x) error('failure') end");
-        System.out.println(lua.stack().printStack());
         assertStackSize(0);
         final LuaFunction function = lua.getGlobalFunction("increment", (final LuaInterpreter l) -> {
-            System.out.println(l.stack().printStack());
             final String msg = l.stack().toString(-1);
-            // l.stack().pop(1);
-            System.out.println("Updated error: " + msg);
+            l.stack().pop(1);
             l.stack().pushString("Updated error: " + msg);
-            System.out.println(l.stack().printStack());
             return 1;
         });
-        System.out.println("before add arg" + lua.stack().printStack());
         function.addArgInteger(42);
-        System.out.println("after add arg" + lua.stack().printStack());
         final FunctionCallException exception = assertThrows(FunctionCallException.class, () -> function.call(1, 1));
-        System.out.println("after call" + lua.stack().printStack());
         assertThat(exception.getMessage(), equalTo(
-                "Function 'lua_pcallk' failed with error 2: [string \"function increment(x) error('failure') end\"]:1: failure"));
+                "Function 'lua_pcallk' failed with error 2: Updated error: [string \"function increment(x) error('failure') end\"]:1: failure"));
         assertStackSize(0);
     }
 

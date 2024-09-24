@@ -68,14 +68,11 @@ class LuaStack {
         if (n > size) {
             throw new IllegalStateException("Trying to pop " + n + " elements but stack has size " + size);
         }
-        System.out.println("Popping " + n + " elements from stack with size " + size);
         setTop(-n - 1);
     }
 
     void setTop(final int n) {
-        System.out.println(this.printStack());
         Lua.lua_settop(state, n);
-        System.out.println(this.printStack());
     }
 
     boolean toBoolean(final int idx) {
