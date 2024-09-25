@@ -16,6 +16,7 @@ class LuaInterpreterTest {
     @BeforeEach
     void setup() {
         lua = LuaInterpreter.create();
+        assertStackSize(0);
     }
 
     @AfterEach
@@ -97,6 +98,16 @@ class LuaInterpreterTest {
         function.addArgInteger(42);
         function.call(1, 1);
         assertThat(function.getIntegerResult(), equalTo(43L));
+    }
+
+    @Test
+    void getCallGlobalFunctionWithtErrorHandler() {
+        lua.exec("function increment(x) return x+1 end");
+        assertStackSize(0);
+        final LuaFunction function = lua.getGlobalFunction("increment", (l) -> 0);
+        function.addArgInteger(42);
+        function.call(1, 1);
+        assertThat(function.getIntegerResult(), equalTo(43L));
         assertStackSize(0);
     }
 
@@ -120,7 +131,7 @@ class LuaInterpreterTest {
             final String msg = l.stack().toString(-1);
             l.stack().pop(1);
             l.stack().pushString("Updated error: " + msg);
-            return 1;
+            return 0;
         });
         function.addArgInteger(42);
         final FunctionCallException exception = assertThrows(FunctionCallException.class, () -> function.call(1, 1));
