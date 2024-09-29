@@ -1,8 +1,5 @@
 package org.itsallcode.luava;
 
-import java.lang.foreign.MemorySegment;
-import java.util.function.ToIntFunction;
-
 public class LuaInterpreter implements AutoCloseable {
 
     private final LowLevelLua lua;
@@ -27,30 +24,22 @@ public class LuaInterpreter implements AutoCloseable {
 
     public String getGlobalString(final String name) {
         lua.getGlobal(name);
-        final String value = lua.stack().toString(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popString();
     }
 
     public long getGlobalInteger(final String name) {
         lua.getGlobal(name);
-        final long value = lua.stack().toInteger(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popInteger();
     }
 
     public double getGlobalNumber(final String name) {
         lua.getGlobal(name);
-        final double value = lua.stack().toNumber(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popNumber();
     }
 
     public boolean getGlobalBoolean(final String name) {
         lua.getGlobal(name);
-        final boolean value = lua.stack().toBoolean(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popBoolean();
     }
 
     public LuaTable getGlobalTable(final String name) {
@@ -59,18 +48,7 @@ public class LuaInterpreter implements AutoCloseable {
     }
 
     public LuaFunction getGlobalFunction(final String name) {
-        return this.getGlobalFunction(name, null);
-    }
-
-    public LuaFunction getGlobalFunction(final String name, final ToIntFunction<LuaInterpreter> messageHandler) {
-        int errorHandlerIdx = 0;
-        if (messageHandler != null) {
-            lua.stack().pushCFunction((final MemorySegment newState) -> messageHandler
-                    .applyAsInt(new LuaInterpreter(this.lua.forState(newState))));
-            errorHandlerIdx = lua.stack().getTop();
-        }
-        lua.getGlobal(name);
-        return lua.function(-1, errorHandlerIdx);
+        return lua.globalFunction(name);
     }
 
     public void setGlobalString(final String name, final String value) {

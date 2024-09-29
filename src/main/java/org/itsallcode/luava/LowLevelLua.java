@@ -3,11 +3,13 @@ package org.itsallcode.luava;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.function.IntSupplier;
+import java.util.logging.Logger;
 
 import org.itsallcode.luava.ffi.Lua;
 import org.itsallcode.luava.ffi.lua_KFunction;
 
 class LowLevelLua implements AutoCloseable {
+    private static final Logger LOG = Logger.getLogger(LowLevelLua.class.getName());
     private final Arena arena;
     final MemorySegment state;
     private final LuaStack stack;
@@ -51,8 +53,11 @@ class LowLevelLua implements AutoCloseable {
      * @param ctx
      * @param upcallFunction
      */
-    void pcallk(final int nargs, final int nresults, final int msgHandler, final long ctx,
+    private void pcallk(final int nargs, final int nresults, final int msgHandler, final long ctx,
             final lua_KFunction.Function upcallFunction) {
+        LOG.info(
+                () -> "Calling function with " + nargs + " args and " + nresults + " results, msgHandler: " + msgHandler
+                        + " context: " + ctx);
         final MemorySegment k = upcallFunction == null ? Lua.NULL() : lua_KFunction.allocate(upcallFunction, arena);
         checkStatus("lua_pcallk", () -> Lua.lua_pcallk(state, nargs, nresults, msgHandler, ctx, k));
     }
@@ -64,8 +69,11 @@ class LowLevelLua implements AutoCloseable {
     void checkStatus(final String functionName, final IntSupplier nativeFunctionCall) {
         final int status = nativeFunctionCall.getAsInt();
         if (status != Lua.LUA_OK()) {
-            final String message = stack.toString(-1);
-            stack.pop(1);
+            LOG.warning(
+                    () -> "Lua API call '" + functionName + "' failed with status " + status
+                            + ": getting error message...");
+            System.out.println(stack().printStack());
+            final String message = "blubb"; // stack.popString();
             throw new FunctionCallException(functionName, status, message);
         }
     }
@@ -87,9 +95,8 @@ class LowLevelLua implements AutoCloseable {
         return new LuaTable(state, stack, arena, idx);
     }
 
-    public LuaFunction function(final int idx, final Integer errorHandlerIdx) {
-        assertType(idx, LuaType.FUNCTION);
-        return new LuaFunction(this, arena, idx, errorHandlerIdx);
+    public LuaFunction globalFunction(final String name) {
+        return new LuaFunction(this, arena, name);
     }
 
     private void assertType(final int idx, final LuaType expectedType) {

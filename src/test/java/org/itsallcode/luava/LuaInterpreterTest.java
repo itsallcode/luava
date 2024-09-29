@@ -5,6 +5,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.lang.foreign.MemorySegment;
+import java.util.List;
+
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -94,20 +97,18 @@ class LuaInterpreterTest {
     void getCallGlobalFunction() {
         lua.exec("function increment(x) return x+1 end");
         assertStackSize(0);
-        final LuaFunction function = lua.getGlobalFunction("increment");
-        function.addArgInteger(42);
-        function.call(1, 1);
-        assertThat(function.getIntegerResult(), equalTo(43L));
+        final List<Object> result = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class)
+                .call();
+        assertThat(result.get(0), equalTo(43L));
     }
 
     @Test
     void getCallGlobalFunctionWithtErrorHandler() {
         lua.exec("function increment(x) return x+1 end");
         assertStackSize(0);
-        final LuaFunction function = lua.getGlobalFunction("increment", (l) -> 0);
-        function.addArgInteger(42);
-        function.call(1, 1);
-        assertThat(function.getIntegerResult(), equalTo(43L));
+        final List<Object> result = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class)
+                .messageHandler((final MemorySegment l) -> 0).call();
+        assertThat(result.get(0), equalTo(43L));
         assertStackSize(0);
     }
 
@@ -115,9 +116,8 @@ class LuaInterpreterTest {
     void getCallGlobalFunctionFails() {
         lua.exec("function increment(x) error('failure') end");
         assertStackSize(0);
-        final LuaFunction function = lua.getGlobalFunction("increment");
-        function.addArgInteger(42);
-        final LuaException exception = assertThrows(LuaException.class, () -> function.call(1, 1));
+        final LuaFunction function = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class);
+        final LuaException exception = assertThrows(LuaException.class, function::call);
         assertStackSize(0);
         assertThat(exception.getMessage(), equalTo(
                 "Function 'lua_pcallk' failed with error 2: [string \"function increment(x) error('failure') end\"]:1: failure"));
@@ -127,14 +127,9 @@ class LuaInterpreterTest {
     void getCallGlobalFunctionWithMessageHandler() {
         lua.exec("function increment(x) error('failure') end");
         assertStackSize(0);
-        final LuaFunction function = lua.getGlobalFunction("increment", (final LuaInterpreter l) -> {
-            final String msg = l.stack().toString(-1);
-            l.stack().pop(1);
-            l.stack().pushString("Updated error: " + msg);
-            return 0;
-        });
-        function.addArgInteger(42);
-        final FunctionCallException exception = assertThrows(FunctionCallException.class, () -> function.call(1, 1));
+        final LuaFunction function = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class)
+                .messageUpdateHandler((final String msg) -> "Updated error: " + msg);
+        final FunctionCallException exception = assertThrows(FunctionCallException.class, function::call);
         assertThat(exception.getMessage(), equalTo(
                 "Function 'lua_pcallk' failed with error 2: Updated error: [string \"function increment(x) error('failure') end\"]:1: failure"));
         assertStackSize(0);

@@ -20,30 +20,22 @@ public class LuaTable {
 
     public String getString(final String key) {
         getField(key, LuaType.STRING);
-        final String value = stack.toString(-1);
-        stack.pop(1);
-        return value;
+        return stack.popString();
     }
 
     public long getInteger(final String key) {
         getField(key, LuaType.NUMBER);
-        final long value = stack.toInteger(-1);
-        stack.pop(1);
-        return value;
+        return stack.popInteger();
     }
 
     public double getNumber(final String key) {
         getField(key, LuaType.NUMBER);
-        final double value = stack.toNumber(-1);
-        stack.pop(1);
-        return value;
+        return stack.popNumber();
     }
 
     public boolean getBoolean(final String key) {
         getField(key, LuaType.BOOLEAN);
-        final boolean value = stack.toBoolean(-1);
-        stack.pop(1);
-        return value;
+        return stack.popBoolean();
     }
 
     private LuaType getFieldType(final String key) {
