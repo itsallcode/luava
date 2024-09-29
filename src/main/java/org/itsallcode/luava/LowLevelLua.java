@@ -72,8 +72,7 @@ class LowLevelLua implements AutoCloseable {
             LOG.warning(
                     () -> "Lua API call '" + functionName + "' failed with status " + status
                             + ": getting error message...");
-            System.out.println(stack().printStack());
-            final String message = "blubb"; // stack.popString();
+            final String message = stack.popString();
             throw new FunctionCallException(functionName, status, message);
         }
     }
@@ -96,7 +95,7 @@ class LowLevelLua implements AutoCloseable {
     }
 
     public LuaFunction globalFunction(final String name) {
-        return new LuaFunction(this, arena, name);
+        return new LuaFunction(this, name);
     }
 
     private void assertType(final int idx, final LuaType expectedType) {

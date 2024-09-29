@@ -1,6 +1,6 @@
 package org.itsallcode.luava;
 
-public class LuaInterpreter implements AutoCloseable {
+public final class LuaInterpreter implements AutoCloseable {
 
     private final LowLevelLua lua;
 

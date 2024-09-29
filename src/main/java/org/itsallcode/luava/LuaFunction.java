@@ -2,7 +2,6 @@ package org.itsallcode.luava;
 
 import static java.util.Collections.emptyList;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.List;
@@ -15,23 +14,23 @@ import org.itsallcode.luava.ffi.lua_CFunction;
 public class LuaFunction {
     private static final Logger LOG = Logger.getLogger(LuaFunction.class.getName());
     private final LowLevelLua lua;
-    private final Arena arena;
     private final String name;
     private lua_CFunction.Function messageHandler;
     private List<Object> argumentValues = emptyList();
     private List<Class<?>> resultTypes = emptyList();
 
-    LuaFunction(final LowLevelLua lowLevelLua, final Arena arena, final String name) {
+    LuaFunction(final LowLevelLua lowLevelLua, final String name) {
         this.lua = lowLevelLua;
-        this.arena = arena;
         this.name = name;
     }
 
+    @SuppressWarnings("java:S923") // Using varargs by intention
     public LuaFunction argumentValues(final Object... argumentValues) {
         this.argumentValues = Arrays.asList(argumentValues);
         return this;
     }
 
+    @SuppressWarnings("java:S923") // Using varargs by intention
     public LuaFunction resultTypes(final Class<?>... resultTypes) {
         this.resultTypes = Arrays.asList(resultTypes);
         return this;
@@ -40,12 +39,10 @@ public class LuaFunction {
     public LuaFunction messageUpdateHandler(final UnaryOperator<String> messageHandler) {
         return messageHandler((final MemorySegment l) -> {
             LOG.fine("Message handler: popping error message...");
-            System.err.println(lua.stack().printStack());
             final String msg = lua.stack().popString();
             final String updatedMsg = messageHandler.apply(msg);
             LOG.fine(() -> "Pushing updated error message '" + updatedMsg + "'");
             lua.stack().pushString(updatedMsg);
-            System.err.println(lua.stack().printStack());
             return Lua.LUA_OK();
         });
     }
@@ -59,7 +56,6 @@ public class LuaFunction {
         final int messageHandlerIdx = getMessageHandlerIdx();
         lua.getGlobal(name);
         pushArguments();
-        System.out.println(lua.stack().printStack());
         try {
             lua.pcall(this.argumentValues.size(), this.resultTypes.size(), messageHandlerIdx);
             return getResultValues();
