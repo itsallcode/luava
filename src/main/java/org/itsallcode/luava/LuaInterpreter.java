@@ -1,7 +1,7 @@
 package org.itsallcode.luava;
 
 import java.lang.foreign.MemorySegment;
-import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class LuaInterpreter implements AutoCloseable {
 
@@ -62,12 +62,11 @@ public class LuaInterpreter implements AutoCloseable {
         return this.getGlobalFunction(name, null);
     }
 
-    public LuaFunction getGlobalFunction(final String name, final Function<LuaInterpreter, Integer> messageHandler) {
+    public LuaFunction getGlobalFunction(final String name, final ToIntFunction<LuaInterpreter> messageHandler) {
         int errorHandlerIdx = 0;
         if (messageHandler != null) {
-            lua.stack().pushCFunction((final MemorySegment newState) -> {
-                return messageHandler.apply(new LuaInterpreter(this.lua.forState(newState)));
-            });
+            lua.stack().pushCFunction((final MemorySegment newState) -> messageHandler
+                    .applyAsInt(new LuaInterpreter(this.lua.forState(newState))));
             errorHandlerIdx = lua.stack().getTop();
         }
         lua.getGlobal(name);

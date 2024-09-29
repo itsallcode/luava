@@ -2,7 +2,7 @@ package org.itsallcode.luava;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.util.function.Supplier;
+import java.util.function.IntSupplier;
 
 import org.itsallcode.luava.ffi.Lua;
 import org.itsallcode.luava.ffi.lua_KFunction;
@@ -61,8 +61,8 @@ class LowLevelLua implements AutoCloseable {
         checkStatus("luaL_loadstring", () -> Lua.luaL_loadstring(state, arena.allocateFrom(chunk)));
     }
 
-    void checkStatus(final String functionName, final Supplier<Integer> nativeFunctionCall) {
-        final int status = nativeFunctionCall.get();
+    void checkStatus(final String functionName, final IntSupplier nativeFunctionCall) {
+        final int status = nativeFunctionCall.getAsInt();
         if (status != Lua.LUA_OK()) {
             final String message = stack.toString(-1);
             stack.pop(1);
