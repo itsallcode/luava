@@ -5,6 +5,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
 
 import org.itsallcode.luava.ffi.Lua;
+import org.itsallcode.luava.ffi.lua_CFunction;
 
 class LuaStack {
     private final MemorySegment state;
@@ -53,21 +54,78 @@ class LuaStack {
         Lua.lua_pushlstring(state, segment, segment.byteSize() - 1);
     }
 
-    void pop(final int n) {
+    void pushCFunction(final lua_CFunction.Function fn) {
+        pushClosure(fn, 0);
+    }
+
+    private void pushClosure(final lua_CFunction.Function fn, final int n) {
+        final MemorySegment functionSegment = lua_CFunction.allocate(fn, arena);
+        Lua.lua_pushcclosure(state, functionSegment, n);
+    }
+
+    public void pushObject(final Object v) {
+        switch (v) {
+            case null:
+                pushNil();
+                return;
+            case final Integer i:
+                pushInteger(i);
+                return;
+            case final Long l:
+                pushInteger(l);
+                return;
+            case final Float f:
+                pushNumber(f);
+                return;
+            case final Double d:
+                pushNumber(d);
+                return;
+            case final Boolean b:
+                pushBoolean(b);
+                return;
+            case final String s:
+                pushString(s);
+                return;
+            case final lua_CFunction.Function f:
+                pushCFunction(f);
+                return;
+            default:
+                throw new IllegalArgumentException(
+                        "Unsupported type " + v.getClass().getName() + " of value '" + v + "'");
+        }
+    }
+
+    void pop() {
+        pop(1);
+    }
+
+    private void pop(final int n) {
         setTop(-n - 1);
     }
 
-    void setTop(final int n) {
+    private void setTop(final int n) {
         Lua.lua_settop(state, n);
     }
 
-    boolean toBoolean(final int idx) {
+    private Void popNil() {
+        pop();
+        return null;
+    }
+
+    private boolean toBoolean(final int idx) {
         return Lua.lua_toboolean(state, idx) != 0;
     }
 
-    String toString(final int idx) {
+    boolean popBoolean() {
+        final boolean bool = toBoolean(-1);
+        pop();
+        return bool;
+    }
+
+    private String toString(final int idx) {
         if (!isString(idx)) {
-            throw new LuaException("Expected string at index " + idx + " but was " + getType(idx));
+            throw new LuaException(
+                    "Expected string at index " + idx + " but was " + getType(idx) + ", " + printStack());
         }
         final MemorySegment len = arena.allocateFrom(Lua.size_t, 0);
         final MemorySegment result = Lua.lua_tolstring(state, idx, len);
@@ -81,7 +139,13 @@ class LuaStack {
         return new String(bytes, 0, length, StandardCharsets.UTF_8);
     }
 
-    double toNumber(final int idx) {
+    String popString() {
+        final String value = toString(-1);
+        pop();
+        return value;
+    }
+
+    private double toNumber(final int idx) {
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final double value = Lua.lua_tonumberx(state, idx, isNumber);
         if (isNumber.get(Lua.C_INT, 0) != 1) {
@@ -90,7 +154,13 @@ class LuaStack {
         return value;
     }
 
-    long toInteger(final int idx) {
+    double popNumber() {
+        final double number = toNumber(-1);
+        pop();
+        return number;
+    }
+
+    private long toInteger(final int idx) {
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final long value = Lua.lua_tointegerx(state, idx, isNumber);
         if (isNumber.get(Lua.C_INT, 0) != 1) {
@@ -99,7 +169,61 @@ class LuaStack {
         return value;
     }
 
+    long popInteger() {
+        final long integer = toInteger(-1);
+        pop();
+        return integer;
+    }
+
     int getTop() {
         return Lua.lua_gettop(state);
+    }
+
+    String printStack() {
+        final StringBuilder b = new StringBuilder();
+        final int top = this.getTop();
+        b.append("Stack size: " + top + ": ");
+        for (int idx = 1; idx <= top; idx++) {
+            b.append(format(idx));
+            if (idx < top) {
+                b.append(", ");
+            }
+        }
+        return b.toString();
+    }
+
+    private String format(final int idx) {
+        final LuaType type = getType(idx);
+        final String result = "#" + idx + " " + type;
+        final String value = switch (type) {
+            case STRING -> toString(idx);
+            case NUMBER -> String.valueOf(toNumber(idx));
+            case BOOLEAN -> String.valueOf(toBoolean(idx));
+            default -> "";
+        };
+        if (!value.isEmpty()) {
+            return result + ": " + value;
+        }
+        return result;
+    }
+
+    public Object popObject(final Class<?> expectedType) {
+        final LuaType type = getType(-1);
+        if (type == LuaType.NIL) {
+            return popNil();
+        }
+        if (expectedType == Boolean.class) {
+            return popBoolean();
+        }
+        if (expectedType == Long.class) {
+            return popInteger();
+        }
+        if (expectedType == Double.class) {
+            return popNumber();
+        }
+        if (expectedType == String.class) {
+            return popString();
+        }
+        throw new UnsupportedOperationException("Unsupported Lua type " + expectedType + " / " + type);
     }
 }

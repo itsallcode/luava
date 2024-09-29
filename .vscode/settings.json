@@ -1,6 +1,6 @@
 {
     "editor.formatOnSave": true,
-    "editor.formatOnSaveMode": "modifications",
+    "editor.formatOnSaveMode": "file",
     "editor.codeActionsOnSave": {
         "source.organizeImports": "explicit",
         "source.generate.finalModifiers": "explicit",
@@ -29,7 +29,7 @@
     },
     "java.compile.nullAnalysis.mode": "automatic",
     "sonarlint.connectedMode.project": {
-        "connectionId": "kaklakariada-github",
-        "projectKey": "luava"
+        "connectionId": "itsallcode",
+        "projectKey": "org.itsallcode:luava"
     }
 }

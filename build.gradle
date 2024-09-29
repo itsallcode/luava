@@ -19,7 +19,7 @@ dependencies {
 
 java {
     toolchain {
-        def javaVersion = project.hasProperty('javaVersion') ? project.getProperty('javaVersion') : 22
+        def javaVersion = project.hasProperty('javaVersion') ? project.getProperty('javaVersion') : 23
         languageVersion = JavaLanguageVersion.of(javaVersion)
     }
 }
@@ -41,7 +41,8 @@ jacocoTestReport {
 sonarqube {
     properties {
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.organization", "kaklakariada-github"
+        property "sonar.organization", "itsallcode"
+        property "sonar.exclusions", "build/generated/sources/jextract/**"
     }
 }
 
@@ -66,7 +67,7 @@ testing {
     }
 }
 
-OperatingSystem currentOs = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem
+def currentOs = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem
 task downloadJextract(type: DownloadTask) {
     def getOs = {
         if(currentOs.isMacOsX()) {

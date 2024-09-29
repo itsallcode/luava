@@ -2,17 +2,19 @@ package org.itsallcode.luava;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.util.function.IntSupplier;
+import java.util.logging.Logger;
 
 import org.itsallcode.luava.ffi.Lua;
 import org.itsallcode.luava.ffi.lua_KFunction;
-import org.itsallcode.luava.ffi.lua_KFunction.Function;
 
 class LowLevelLua implements AutoCloseable {
+    private static final Logger LOG = Logger.getLogger(LowLevelLua.class.getName());
     private final Arena arena;
-    private final MemorySegment state;
+    final MemorySegment state;
     private final LuaStack stack;
 
-    private LowLevelLua(final Arena arena, final MemorySegment state) {
+    LowLevelLua(final Arena arena, final MemorySegment state) {
         this.arena = arena;
         this.state = state;
         this.stack = new LuaStack(state, arena);
@@ -24,34 +26,54 @@ class LowLevelLua implements AutoCloseable {
         return new LowLevelLua(arena, state);
     }
 
+    LowLevelLua forState(final MemorySegment newState) {
+        return new LowLevelLua(arena, newState);
+    }
+
     void openLibs() {
         Lua.luaL_openlibs(state);
     }
 
-    void pcall(final int nargs, final int nresults, final int errfunc, final long ctx) {
-        final Function function = (final MemorySegment l, final int status, final long ctx1) -> {
-            return 0;
-        };
-        pcall(nargs, nresults, errfunc, ctx, function);
+    void pcall(final int nargs, final int nresults) {
+        pcallk(nargs, nresults, 0, 0, null);
     }
 
-    void pcall(final int nargs, final int nresults, final int errfunc, final long ctx,
+    void pcall(final int nargs, final int nresults, final int errfunc) {
+        pcallk(nargs, nresults, errfunc, 0, null);
+    }
+
+    /**
+     * This function behaves exactly like {@link #pcall(int, int, int, long)},
+     * except that it allows the
+     * called function to yield.
+     * 
+     * @param nargs
+     * @param nresults
+     * @param msgHandler
+     * @param ctx
+     * @param upcallFunction
+     */
+    private void pcallk(final int nargs, final int nresults, final int msgHandler, final long ctx,
             final lua_KFunction.Function upcallFunction) {
-        final MemorySegment k = lua_KFunction.allocate(upcallFunction, arena);
-        final int error = Lua.lua_pcallk(state, nargs, nresults, errfunc, ctx, k);
-        if (error != 0) {
-            final String message = stack.toString(-1);
-            stack.pop(1);
-            throw new FunctionCallException("lua_pcallk", error, message);
-        }
+        LOG.info(
+                () -> "Calling function with " + nargs + " args and " + nresults + " results, msgHandler: " + msgHandler
+                        + " context: " + ctx);
+        final MemorySegment k = upcallFunction == null ? Lua.NULL() : lua_KFunction.allocate(upcallFunction, arena);
+        checkStatus("lua_pcallk", () -> Lua.lua_pcallk(state, nargs, nresults, msgHandler, ctx, k));
     }
 
     void loadString(final String chunk) {
-        final int error = Lua.luaL_loadstring(state, arena.allocateFrom(chunk));
-        if (error != 0) {
-            final String message = stack.toString(-1);
-            stack.pop(1);
-            throw new FunctionCallException("luaL_loadstring", error, message);
+        checkStatus("luaL_loadstring", () -> Lua.luaL_loadstring(state, arena.allocateFrom(chunk)));
+    }
+
+    void checkStatus(final String functionName, final IntSupplier nativeFunctionCall) {
+        final int status = nativeFunctionCall.getAsInt();
+        if (status != Lua.LUA_OK()) {
+            LOG.warning(
+                    () -> "Lua API call '" + functionName + "' failed with status " + status
+                            + ": getting error message...");
+            final String message = stack.popString();
+            throw new FunctionCallException(functionName, status, message);
         }
     }
 
@@ -72,9 +94,8 @@ class LowLevelLua implements AutoCloseable {
         return new LuaTable(state, stack, arena, idx);
     }
 
-    public LuaFunction function(final int idx) {
-        assertType(idx, LuaType.FUNCTION);
-        return new LuaFunction(state, stack, arena, idx);
+    public LuaFunction globalFunction(final String name) {
+        return new LuaFunction(this, name);
     }
 
     private void assertType(final int idx, final LuaType expectedType) {

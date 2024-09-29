@@ -1,10 +1,10 @@
 package org.itsallcode.luava;
 
-public class LuaInterpreter implements AutoCloseable {
+public final class LuaInterpreter implements AutoCloseable {
 
     private final LowLevelLua lua;
 
-    public LuaInterpreter(final LowLevelLua lua) {
+    private LuaInterpreter(final LowLevelLua lua) {
         this.lua = lua;
     }
 
@@ -18,32 +18,28 @@ public class LuaInterpreter implements AutoCloseable {
         this.lua.close();
     }
 
+    LuaStack stack() {
+        return lua.stack();
+    }
+
     public String getGlobalString(final String name) {
         lua.getGlobal(name);
-        final String value = lua.stack().toString(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popString();
     }
 
     public long getGlobalInteger(final String name) {
         lua.getGlobal(name);
-        final long value = lua.stack().toInteger(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popInteger();
     }
 
     public double getGlobalNumber(final String name) {
         lua.getGlobal(name);
-        final double value = lua.stack().toNumber(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popNumber();
     }
 
     public boolean getGlobalBoolean(final String name) {
         lua.getGlobal(name);
-        final boolean value = lua.stack().toBoolean(-1);
-        lua.stack().pop(1);
-        return value;
+        return lua.stack().popBoolean();
     }
 
     public LuaTable getGlobalTable(final String name) {
@@ -52,8 +48,7 @@ public class LuaInterpreter implements AutoCloseable {
     }
 
     public LuaFunction getGlobalFunction(final String name) {
-        lua.getGlobal(name);
-        return lua.function(-1);
+        return lua.globalFunction(name);
     }
 
     public void setGlobalString(final String name, final String value) {
@@ -78,7 +73,6 @@ public class LuaInterpreter implements AutoCloseable {
 
     public void exec(final String chunk) {
         lua.loadString(chunk);
-        lua.pcall(0, 0, 0, 0);
+        lua.pcall(0, 0);
     }
-
 }
