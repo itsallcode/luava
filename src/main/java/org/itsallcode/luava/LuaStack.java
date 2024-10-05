@@ -208,21 +208,28 @@ class LuaStack {
     }
 
     public Object popObject(final Class<?> expectedType) {
-        final LuaType type = getType(-1);
+        final Object result = toObject(expectedType);
+        pop();
+        return result;
+    }
+
+    public Object toObject(final Class<?> expectedType) {
+        final int idx = -1;
+        final LuaType type = getType(idx);
         if (type == LuaType.NIL) {
-            return popNil();
+            return null;
         }
         if (expectedType == Boolean.class) {
-            return popBoolean();
+            return toBoolean(idx);
         }
-        if (expectedType == Long.class) {
-            return popInteger();
+        if (expectedType == Long.class || expectedType == long.class) {
+            return toInteger(idx);
         }
         if (expectedType == Double.class) {
-            return popNumber();
+            return toNumber(idx);
         }
         if (expectedType == String.class) {
-            return popString();
+            return toString(idx);
         }
         throw new UnsupportedOperationException("Unsupported Lua type " + expectedType + " / " + type);
     }

@@ -13,8 +13,6 @@ repositories {
 }
 
 dependencies {
-    testImplementation libs.junit.jupiter
-    testImplementation libs.hamcrest
 }
 
 java {
@@ -53,6 +51,11 @@ testing {
     suites {
         test {
             useJUnitJupiter(libs.versions.junit.jupiter)
+            dependencies {
+                implementation libs.hamcrest
+                implementation libs.mockito.core
+                implementation libs.mockito.junit
+            }
             targets {
                 all {
                     testTask.configure {

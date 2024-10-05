@@ -1,17 +1,27 @@
 package org.itsallcode.luava;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.function.LongConsumer;
+import java.util.function.LongUnaryOperator;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class LuaInterpreterTest {
     private LuaInterpreter lua;
 
@@ -114,6 +124,28 @@ class LuaInterpreterTest {
 
     void assertStackSize(final int expectedSize) {
         assertThat("stack size", lua.stack().getTop(), equalTo(expectedSize));
+    }
+
+    @Test
+    void callJavaMethodFromLua(@Mock final LongUnaryOperator mock) throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java(arg) return java_function(arg) + 1 end");
+        when(mock.applyAsLong(42L)).thenReturn(84L);
+        final Method method = mock.getClass().getMethod("applyAsLong", long.class);
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").argumentValues(42).resultTypes(Long.class)
+                .call();
+        assertThat(result, equalTo(List.of(85L)));
+    }
+
+    @Test
+    void callVoidJavaMethodFromLua(@Mock final LongConsumer mock) throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java(arg) java_function(arg+1) end");
+        final Method method = mock.getClass().getMethod("accept", long.class);
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").argumentValues(42).resultTypes()
+                .call();
+        assertThat(result, empty());
+        verify(mock).accept(43);
     }
 
     @Test
