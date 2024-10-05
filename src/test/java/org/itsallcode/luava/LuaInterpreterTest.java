@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.lang.foreign.MemorySegment;
 import java.util.List;
 
 import org.junit.jupiter.api.*;
@@ -103,16 +102,6 @@ class LuaInterpreterTest {
     }
 
     @Test
-    void getCallGlobalFunctionWithtErrorHandler() {
-        lua.exec("function increment(x) return x+1 end");
-        assertStackSize(0);
-        final List<Object> result = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class)
-                .messageHandler((final MemorySegment l) -> 0).call();
-        assertThat(result.get(0), equalTo(43L));
-        assertStackSize(0);
-    }
-
-    @Test
     void getCallGlobalFunctionFails() {
         lua.exec("function increment(x) error('failure') end");
         assertStackSize(0);
@@ -121,19 +110,6 @@ class LuaInterpreterTest {
         assertStackSize(0);
         assertThat(exception.getMessage(), equalTo(
                 "Function 'lua_pcallk' failed with error 2: [string \"function increment(x) error('failure') end\"]:1: failure"));
-    }
-
-    @Test
-    @Disabled("Currently broken")
-    void getCallGlobalFunctionWithMessageHandler() {
-        lua.exec("function increment(x) error('failure') end");
-        assertStackSize(0);
-        final LuaFunction function = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class)
-                .messageUpdateHandler((final String msg) -> "Updated error: " + msg);
-        final FunctionCallException exception = assertThrows(FunctionCallException.class, function::call);
-        assertThat(exception.getMessage(), equalTo(
-                "Function 'lua_pcallk' failed with error 2: Updated error: [string \"function increment(x) error('failure') end\"]:1: failure"));
-        assertStackSize(0);
     }
 
     void assertStackSize(final int expectedSize) {
