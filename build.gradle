@@ -48,6 +48,7 @@ sonarqube {
 
 tasks.sonarqube.dependsOn([tasks.jacocoTestReport])
 
+def currentOs = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem
 testing {
     suites {
         test {
@@ -57,9 +58,13 @@ testing {
                     testTask.configure {
                         systemProperty 'java.util.logging.config.file', 'src/test/resources/logging.properties'
                         systemProperty 'jextract.trace.downcalls', 'true'
-                        environment "LD_LIBRARY_PATH", "${project.buildDir}/lua-libs/"
-                        environment "DYLD_LIBRARY_PATH", "${project.buildDir}/lua-libs/"
                         jvmArgs '--enable-native-access=ALL-UNNAMED'
+                        if(currentOs.isMacOsX()) {
+                            environment "DYLD_LIBRARY_PATH", "${project.buildDir}/lua-libs/"
+                        }
+                        if(currentOs.isLinux()) {
+                            environment "LD_LIBRARY_PATH", "${project.buildDir}/lua-libs/"
+                        }
                     }
                 }
             }
@@ -67,7 +72,6 @@ testing {
     }
 }
 
-def currentOs = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem
 task downloadJextract(type: DownloadTask) {
     def getOs = {
         if(currentOs.isMacOsX()) {
