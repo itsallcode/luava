@@ -3,11 +3,15 @@ package org.itsallcode.luava;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 import org.itsallcode.luava.ffi.Lua;
 import org.itsallcode.luava.ffi.lua_CFunction;
 
 class LuaStack {
+    private static final Logger LOG = Logger.getLogger(LuaStack.class.getName());
     private final MemorySegment state;
     private final Arena arena;
 
@@ -216,7 +220,10 @@ class LuaStack {
     }
 
     public Object toObject(final Class<?> expectedType) {
-        final int idx = -1;
+        return toObject(-1, expectedType);
+    }
+
+    private Object toObject(final int idx, final Class<?> expectedType) {
         final LuaType type = getType(idx);
         if (type == LuaType.NIL) {
             return null;
@@ -234,5 +241,21 @@ class LuaStack {
             return toString(idx);
         }
         throw new UnsupportedOperationException("Unsupported Lua type " + expectedType + " / " + type);
+    }
+
+    /**
+     * Get the top elements from the stack without removing them.
+     * 
+     * @param types object types
+     * @return values
+     */
+    public Object[] getValues(final Class<?>[] types) {
+        final Object[] values = IntStream.range(0, types.length)
+                .mapToObj(i -> toObject(i - types.length, types[i]))
+                .toArray();
+        LOG.finest(
+                () -> "Got " + values.length + " values for types " + Arrays.toString(types) + ": "
+                        + Arrays.toString(values) + ", " + printStack());
+        return values;
     }
 }

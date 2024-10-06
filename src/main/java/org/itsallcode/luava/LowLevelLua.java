@@ -94,10 +94,6 @@ class LowLevelLua implements AutoCloseable {
         return new LuaTable(state, stack, arena, idx);
     }
 
-    public LuaFunction globalFunction(final String name) {
-        return new LuaFunction(this, name);
-    }
-
     private void assertType(final int idx, final LuaType expectedType) {
         final LuaType type = stack().getType(idx);
         if (type != expectedType) {

@@ -32,6 +32,8 @@ public class LuaFunction {
     }
 
     public List<Object> call() {
+        LOG.finest(() -> "Calling Lua function '" + name + "' with " + argumentValues.size() + " arguments and "
+                + resultTypes.size() + " return values");
         lua.getGlobal(name);
         pushArguments();
         lua.pcall(this.argumentValues.size(), this.resultTypes.size(), DEFAULT_MESSAGE_HANDLER);

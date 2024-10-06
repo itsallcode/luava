@@ -3,7 +3,6 @@ package org.itsallcode.luava;
 import java.lang.foreign.MemorySegment;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.function.IntSupplier;
 
 import org.itsallcode.luava.ffi.lua_CFunction;
@@ -56,7 +55,7 @@ public final class LuaInterpreter implements AutoCloseable {
     }
 
     public LuaFunction getGlobalFunction(final String name) {
-        return lua.globalFunction(name);
+        return new LuaFunction(this.lua, name);
     }
 
     public void setGlobalString(final String name, final String value) {
@@ -80,20 +79,21 @@ public final class LuaInterpreter implements AutoCloseable {
     }
 
     public void setGlobalFunction(final String name, final Object object, final Method method) {
-        setGlobalFunction(name, () -> {
-            final Object[] args = Arrays.stream(method.getParameterTypes()).map(type -> stack().popObject(type))
-                    .toArray();
-            try {
-                final Object result = method.invoke(object, args);
-                if (method.getReturnType() != Void.class) {
-                    stack().pushObject(result);
-                    return 1;
-                }
-                return 0;
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new IllegalStateException("Failed to call Java method " + method + ": " + e.getMessage(), e);
+        setGlobalFunction(name, () -> invokeMethod(object, method));
+    }
+
+    private int invokeMethod(final Object object, final Method method) {
+        final Object[] args = stack().getValues(method.getParameterTypes());
+        try {
+            final Object result = method.invoke(object, args);
+            if (method.getReturnType() != Void.class) {
+                stack().pushObject(result);
+                return 1;
             }
-        });
+            return 0;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new IllegalStateException("Failed to call Java method " + method + ": " + e.getMessage(), e);
+        }
     }
 
     private void setGlobalFunction(final String name, final IntSupplier fn) {

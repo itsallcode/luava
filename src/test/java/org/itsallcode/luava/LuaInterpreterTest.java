@@ -10,8 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.function.LongConsumer;
-import java.util.function.LongUnaryOperator;
+import java.util.function.*;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -135,6 +134,31 @@ class LuaInterpreterTest {
         final List<Object> result = lua.getGlobalFunction("call_java").argumentValues(42).resultTypes(Long.class)
                 .call();
         assertThat(result, equalTo(List.of(85L)));
+        assertStackSize(0);
+    }
+
+    @Test
+    void callJavaMethodWithTwoArgsFromLua(@Mock final LongBinaryOperator mock)
+            throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java(arg) return java_function(arg, 1) + 1 end");
+        when(mock.applyAsLong(42L, 1)).thenReturn(84L);
+        final Method method = mock.getClass().getMethod("applyAsLong", long.class, long.class);
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").argumentValues(42).resultTypes(Long.class)
+                .call();
+        assertThat(result, equalTo(List.of(85L)));
+        assertStackSize(0);
+    }
+
+    @Test
+    void callJavaMethodWithoutArgsFromLua(@Mock final Runnable mock) throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java() java_function() end");
+        final Method method = mock.getClass().getMethod("run");
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").call();
+        verify(mock).run();
+        assertThat(result, empty());
+        assertStackSize(0);
     }
 
     @Test
@@ -146,6 +170,7 @@ class LuaInterpreterTest {
                 .call();
         assertThat(result, empty());
         verify(mock).accept(43);
+        assertStackSize(0);
     }
 
     @Test
