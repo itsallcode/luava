@@ -3,11 +3,15 @@ package org.itsallcode.luava;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 import org.itsallcode.luava.ffi.Lua;
 import org.itsallcode.luava.ffi.lua_CFunction;
 
 class LuaStack {
+    private static final Logger LOG = Logger.getLogger(LuaStack.class.getName());
     private final MemorySegment state;
     private final Arena arena;
 
@@ -107,7 +111,7 @@ class LuaStack {
         Lua.lua_settop(state, n);
     }
 
-    private Void popNil() {
+    Void popNil() {
         pop();
         return null;
     }
@@ -125,13 +129,12 @@ class LuaStack {
     private String toString(final int idx) {
         if (!isString(idx)) {
             throw new LuaException(
-                    "Expected string at index " + idx + " but was " + getType(idx) + ", " + printStack());
+                    "Expected string at index " + idx + " but was " + getType(idx));
         }
         final MemorySegment len = arena.allocateFrom(Lua.size_t, 0);
         final MemorySegment result = Lua.lua_tolstring(state, idx, len);
         final long stringLength = len.get(Lua.size_t, 0);
         final byte[] bytes = result.reinterpret(stringLength).toArray(Lua.C_CHAR);
-
         int length = bytes.length;
         if (bytes.length > 0 && bytes[bytes.length - 1] == 0x0) {
             length = length - 1;
@@ -145,11 +148,13 @@ class LuaStack {
         return value;
     }
 
+    @SuppressWarnings("java:S1941")
     private double toNumber(final int idx) {
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final double value = Lua.lua_tonumberx(state, idx, isNumber);
         if (isNumber.get(Lua.C_INT, 0) != 1) {
-            throw new LuaException("No number at index " + idx + " but is " + getType(idx));
+            throw new LuaException("No number at index " + idx + " but is " +
+                    getType(idx));
         }
         return value;
     }
@@ -160,6 +165,7 @@ class LuaStack {
         return number;
     }
 
+    @SuppressWarnings("java:S1941")
     private long toInteger(final int idx) {
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final long value = Lua.lua_tointegerx(state, idx, isNumber);
@@ -208,22 +214,48 @@ class LuaStack {
     }
 
     public Object popObject(final Class<?> expectedType) {
-        final LuaType type = getType(-1);
+        final Object result = toObject(expectedType);
+        pop();
+        return result;
+    }
+
+    public Object toObject(final Class<?> expectedType) {
+        return toObject(-1, expectedType);
+    }
+
+    private Object toObject(final int idx, final Class<?> expectedType) {
+        final LuaType type = getType(idx);
         if (type == LuaType.NIL) {
-            return popNil();
+            return null;
         }
         if (expectedType == Boolean.class) {
-            return popBoolean();
+            return toBoolean(idx);
         }
-        if (expectedType == Long.class) {
-            return popInteger();
+        if (expectedType == Long.class || expectedType == long.class) {
+            return toInteger(idx);
         }
         if (expectedType == Double.class) {
-            return popNumber();
+            return toNumber(idx);
         }
         if (expectedType == String.class) {
-            return popString();
+            return toString(idx);
         }
         throw new UnsupportedOperationException("Unsupported Lua type " + expectedType + " / " + type);
+    }
+
+    /**
+     * Get the top elements from the stack without removing them.
+     * 
+     * @param types object types
+     * @return values
+     */
+    public Object[] getValues(final Class<?>[] types) {
+        final Object[] values = IntStream.range(0, types.length)
+                .mapToObj(i -> toObject(i - types.length, types[i]))
+                .toArray();
+        LOG.finest(
+                () -> "Got " + values.length + " values for types " + Arrays.toString(types) + ": "
+                        + Arrays.toString(values) + ", " + printStack());
+        return values;
     }
 }

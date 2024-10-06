@@ -1,18 +1,26 @@
 package org.itsallcode.luava;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.lang.foreign.MemorySegment;
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.function.*;
 
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class LuaInterpreterTest {
     private LuaInterpreter lua;
 
@@ -103,16 +111,6 @@ class LuaInterpreterTest {
     }
 
     @Test
-    void getCallGlobalFunctionWithtErrorHandler() {
-        lua.exec("function increment(x) return x+1 end");
-        assertStackSize(0);
-        final List<Object> result = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class)
-                .messageHandler((final MemorySegment l) -> 0).call();
-        assertThat(result.get(0), equalTo(43L));
-        assertStackSize(0);
-    }
-
-    @Test
     void getCallGlobalFunctionFails() {
         lua.exec("function increment(x) error('failure') end");
         assertStackSize(0);
@@ -123,21 +121,56 @@ class LuaInterpreterTest {
                 "Function 'lua_pcallk' failed with error 2: [string \"function increment(x) error('failure') end\"]:1: failure"));
     }
 
+    void assertStackSize(final int expectedSize) {
+        assertThat("stack size", lua.stack().getTop(), equalTo(expectedSize));
+    }
+
     @Test
-    @Disabled("Currently broken")
-    void getCallGlobalFunctionWithMessageHandler() {
-        lua.exec("function increment(x) error('failure') end");
-        assertStackSize(0);
-        final LuaFunction function = lua.getGlobalFunction("increment").argumentValues(42).resultTypes(Long.class)
-                .messageUpdateHandler((final String msg) -> "Updated error: " + msg);
-        final FunctionCallException exception = assertThrows(FunctionCallException.class, function::call);
-        assertThat(exception.getMessage(), equalTo(
-                "Function 'lua_pcallk' failed with error 2: Updated error: [string \"function increment(x) error('failure') end\"]:1: failure"));
+    void callJavaMethodFromLua(@Mock final LongUnaryOperator mock) throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java(arg) return java_function(arg) + 1 end");
+        when(mock.applyAsLong(42L)).thenReturn(84L);
+        final Method method = mock.getClass().getMethod("applyAsLong", long.class);
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").argumentValues(42).resultTypes(Long.class)
+                .call();
+        assertThat(result, equalTo(List.of(85L)));
         assertStackSize(0);
     }
 
-    void assertStackSize(final int expectedSize) {
-        assertThat("stack size", lua.stack().getTop(), equalTo(expectedSize));
+    @Test
+    void callJavaMethodWithTwoArgsFromLua(@Mock final LongBinaryOperator mock)
+            throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java(arg) return java_function(arg, 1) + 1 end");
+        when(mock.applyAsLong(42L, 1)).thenReturn(84L);
+        final Method method = mock.getClass().getMethod("applyAsLong", long.class, long.class);
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").argumentValues(42).resultTypes(Long.class)
+                .call();
+        assertThat(result, equalTo(List.of(85L)));
+        assertStackSize(0);
+    }
+
+    @Test
+    void callJavaMethodWithoutArgsFromLua(@Mock final Runnable mock) throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java() java_function() end");
+        final Method method = mock.getClass().getMethod("run");
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").call();
+        verify(mock).run();
+        assertThat(result, empty());
+        assertStackSize(0);
+    }
+
+    @Test
+    void callVoidJavaMethodFromLua(@Mock final LongConsumer mock) throws NoSuchMethodException, SecurityException {
+        lua.exec("function call_java(arg) java_function(arg+1) end");
+        final Method method = mock.getClass().getMethod("accept", long.class);
+        lua.setGlobalFunction("java_function", mock, method);
+        final List<Object> result = lua.getGlobalFunction("call_java").argumentValues(42).resultTypes()
+                .call();
+        assertThat(result, empty());
+        verify(mock).accept(43);
+        assertStackSize(0);
     }
 
     @Test

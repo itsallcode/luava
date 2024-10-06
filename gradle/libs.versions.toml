@@ -1,7 +1,10 @@
 [versions]
-junit-jupiter = "5.11.0"
+junit-jupiter = "5.11.2"
 hamcrest = "3.0"
+mockito = "5.14.1"
 
 [libraries]
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
