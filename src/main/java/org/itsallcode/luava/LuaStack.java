@@ -107,7 +107,7 @@ class LuaStack {
         Lua.lua_settop(state, n);
     }
 
-    private Void popNil() {
+    Void popNil() {
         pop();
         return null;
     }
@@ -125,13 +125,12 @@ class LuaStack {
     private String toString(final int idx) {
         if (!isString(idx)) {
             throw new LuaException(
-                    "Expected string at index " + idx + " but was " + getType(idx) + ", " + printStack());
+                    "Expected string at index " + idx + " but was " + getType(idx));
         }
         final MemorySegment len = arena.allocateFrom(Lua.size_t, 0);
         final MemorySegment result = Lua.lua_tolstring(state, idx, len);
         final long stringLength = len.get(Lua.size_t, 0);
         final byte[] bytes = result.reinterpret(stringLength).toArray(Lua.C_CHAR);
-
         int length = bytes.length;
         if (bytes.length > 0 && bytes[bytes.length - 1] == 0x0) {
             length = length - 1;
@@ -145,11 +144,13 @@ class LuaStack {
         return value;
     }
 
+    @SuppressWarnings("java:S1941")
     private double toNumber(final int idx) {
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final double value = Lua.lua_tonumberx(state, idx, isNumber);
         if (isNumber.get(Lua.C_INT, 0) != 1) {
-            throw new LuaException("No number at index " + idx + " but is " + getType(idx));
+            throw new LuaException("No number at index " + idx + " but is " +
+                    getType(idx));
         }
         return value;
     }
@@ -160,6 +161,7 @@ class LuaStack {
         return number;
     }
 
+    @SuppressWarnings("java:S1941")
     private long toInteger(final int idx) {
         final MemorySegment isNumber = arena.allocateFrom(Lua.C_INT, 0);
         final long value = Lua.lua_tointegerx(state, idx, isNumber);

@@ -97,9 +97,7 @@ public final class LuaInterpreter implements AutoCloseable {
     }
 
     private void setGlobalFunction(final String name, final IntSupplier fn) {
-        setGlobalFunction(name, (final MemorySegment L) -> {
-            return fn.getAsInt();
-        });
+        setGlobalFunction(name, (final MemorySegment l) -> fn.getAsInt());
     }
 
     private void setGlobalFunction(final String name, final lua_CFunction.Function fn) {

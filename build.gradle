@@ -60,7 +60,7 @@ testing {
                 all {
                     testTask.configure {
                         systemProperty 'java.util.logging.config.file', 'src/test/resources/logging.properties'
-                        systemProperty 'jextract.trace.downcalls', 'true'
+                        //systemProperty 'jextract.trace.downcalls', 'true'
                         jvmArgs '--enable-native-access=ALL-UNNAMED'
                         if(currentOs.isMacOsX()) {
                             environment "DYLD_LIBRARY_PATH", "${project.buildDir}/lua-libs/"
