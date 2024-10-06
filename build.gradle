@@ -75,38 +75,6 @@ testing {
     }
 }
 
-task downloadJextract(type: DownloadTask) {
-    def getOs = {
-        if(currentOs.isMacOsX()) {
-            return "macos"
-        }
-        if(currentOs.isLinux()) {
-            return "linux"
-        }
-        throw new IllegalStateException("Unsupported operating system: ${currentOs}")
-    }
-    def getArch = {
-        def arch = System.getProperty("os.arch")
-        switch(arch) {
-            case "amd64":
-                return "x64"
-            case "x86_64":
-                return "x64"
-            case "aarch64":
-                return "aarch64"
-            default:
-                throw new IllegalStateException("Unsupported architecture: ${arch}")
-        }
-    }
-    sourceUrl = "https://download.java.net/java/early_access/jextract/22/5/openjdk-22-jextract+5-33_${getOs()}-${getArch()}_bin.tar.gz"
-    target = file("${project.buildDir}/jextract.tar.gz")
-}
-
-task unpackJextract(type: Copy, dependsOn: [tasks.downloadJextract]) {
-    from tarTree(resources.gzip(tasks.downloadJextract.outputs.files[0]))
-    into file("${project.buildDir}/jextract/")
-}
-
 task buildLua(type: Exec) {
     def getMakeGoal = {
         if(currentOs.isLinux()) {
@@ -142,22 +110,42 @@ task cleanLua(type: Exec) {
 
 clean.dependsOn(tasks.cleanLua)
 
-task generateNativeInterface(type: Exec, dependsOn: [tasks.unpackJextract]) {
-    def jextractBinary = "${tasks.unpackJextract.outputs.files[0]}/jextract-22/bin/jextract"
-    def includeDir = "${project.rootDir}/lua/src"
-    def generatedSrc = "${project.buildDir}/generated/sources/jextract/"
-    commandLine jextractBinary,
-                '--include-dir', includeDir,
-                '--output', generatedSrc,
-                '--target-package', 'org.itsallcode.luava.ffi',
-                '--library', 'lua',
-                '--header-class-name', 'Lua',
-                "$includeDir/all_lua.h"
-    inputs.dir(includeDir)
-    outputs.dir(generatedSrc)
-    doLast {
-
+task downloadJextract(type: DownloadTask) {
+    def getOs = {
+        if(currentOs.isMacOsX()) {
+            return "macos"
+        }
+        if(currentOs.isLinux()) {
+            return "linux"
+        }
+        throw new IllegalStateException("Unsupported operating system: ${currentOs}")
     }
+    def getArch = {
+        def arch = System.getProperty("os.arch")
+        switch(arch) {
+            case "amd64":
+                return "x64"
+            case "x86_64":
+                return "x64"
+            case "aarch64":
+                return "aarch64"
+            default:
+                throw new IllegalStateException("Unsupported architecture: ${arch}")
+        }
+    }
+    sourceUrl = "https://download.java.net/java/early_access/jextract/22/5/openjdk-22-jextract+5-33_${getOs()}-${getArch()}_bin.tar.gz"
+    target = file("${project.buildDir}/jextract.tar.gz")
+}
+
+task unpackJextract(type: Copy, dependsOn: [tasks.downloadJextract]) {
+    from tarTree(resources.gzip(tasks.downloadJextract.outputs.files[0]))
+    into file("${project.buildDir}/jextract/")
+}
+
+task generateNativeInterface(type: JextractTask, dependsOn: [tasks.unpackJextract]) {
+    jextractBinary = new File(tasks.unpackJextract.outputs.files[0], "jextract-22/bin/jextract")
+    includeDir = new File(project.rootDir, "lua/src")
+    outputDir = new File(project.buildDir, "generated/sources/jextract/")
 }
 
 compileJava {
