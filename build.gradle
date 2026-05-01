@@ -17,7 +17,7 @@ dependencies {
 
 java {
     toolchain {
-        def javaVersion = project.hasProperty('javaVersion') ? project.getProperty('javaVersion') : 23
+        def javaVersion = project.hasProperty('javaVersion') ? project.getProperty('javaVersion') : 25
         languageVersion = JavaLanguageVersion.of(javaVersion)
     }
 }
@@ -133,7 +133,7 @@ task downloadJextract(type: DownloadTask) {
                 throw new IllegalStateException("Unsupported architecture: ${arch}")
         }
     }
-    sourceUrl = "https://download.java.net/java/early_access/jextract/22/5/openjdk-22-jextract+5-33_${getOs()}-${getArch()}_bin.tar.gz"
+    sourceUrl = "https://download.java.net/java/early_access/jextract/25/2/openjdk-25-jextract+2-4_${getOs()}-${getArch()}_bin.tar.gz"
     target = file("${project.buildDir}/jextract.tar.gz")
 }
 
@@ -143,7 +143,7 @@ task unpackJextract(type: Copy, dependsOn: [tasks.downloadJextract]) {
 }
 
 task generateNativeInterface(type: JextractTask, dependsOn: [tasks.unpackJextract]) {
-    jextractBinary = new File(tasks.unpackJextract.outputs.files[0], "jextract-22/bin/jextract")
+    jextractBinary = new File(tasks.unpackJextract.outputs.files[0], "jextract-25/bin/jextract")
     includeDir = new File(project.rootDir, "lua/src")
     outputDir = new File(project.buildDir, "generated/sources/jextract/")
 }
