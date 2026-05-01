@@ -31,7 +31,7 @@ class LowLevelLua implements AutoCloseable {
     }
 
     void openLibs() {
-        Lua.luaL_openlibs(state);
+        Lua.luaL_openselectedlibs(state, ~0, 0);
     }
 
     void pcall(final int nargs, final int nresults) {

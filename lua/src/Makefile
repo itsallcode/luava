@@ -7,7 +7,7 @@
 PLAT= guess
 
 CC= gcc -std=gnu99
-CFLAGS= -O2 -Wall -Wextra $(SYSCFLAGS) $(MYCFLAGS)
+CFLAGS= -O2 -Wall -Wextra $(SYSCFLAGS) $(MYCFLAGS) -fPIC
 LDFLAGS= $(SYSLDFLAGS) $(MYLDFLAGS)
 LIBS= -lm $(SYSLIBS) $(MYLIBS)
 
@@ -32,6 +32,9 @@ CMCFLAGS=
 
 PLATS= guess aix bsd c89 freebsd generic ios linux macosx mingw posix solaris
 
+LUA_SO=	liblua.so
+LUA_DYLIB=	liblua.dylib
+
 LUA_A=	liblua.a
 CORE_O=	lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o
 LIB_O=	lauxlib.o lbaselib.o lcorolib.o ldblib.o liolib.o lmathlib.o loadlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o linit.o
@@ -55,6 +58,16 @@ all:	$(ALL_T)
 o:	$(ALL_O)
 
 a:	$(ALL_A)
+
+so:	$(LUA_SO)
+
+dylib:	$(LUA_DYLIB)
+
+$(LUA_SO): $(CORE_O) $(LIB_O)
+	$(CC) -o $@ -shared $?
+
+$(LUA_DYLIB): $(CORE_O) $(LIB_O)
+	$(CC) -dynamiclib -o $@ $^ $(LIBS)
 
 $(LUA_A): $(BASE_O)
 	$(AR) $@ $(BASE_O)
