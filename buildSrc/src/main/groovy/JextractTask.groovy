@@ -8,16 +8,19 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.file.ProjectLayout
 import org.gradle.process.ExecOperations
 import javax.inject.Inject
 
 @CacheableTask
 class JextractTask extends DefaultTask {
     private final ExecOperations execOperations
+    private final File rootDir
 
     @Inject
-    JextractTask(ExecOperations execOperations) {
+    JextractTask(ExecOperations execOperations, ProjectLayout projectLayout) {
         this.execOperations = execOperations
+        this.rootDir = projectLayout.projectDirectory.asFile
     }
 
     @InputFile @PathSensitive(PathSensitivity.RELATIVE) File jextractBinary
@@ -37,8 +40,9 @@ class JextractTask extends DefaultTask {
                 '--header-class-name', 'Lua',
                 "$includeDir/all_lua.h"
         ]
+        def workingDirectory = rootDir
         execOperations.exec {
-            workingDir project.rootDir
+            workingDir workingDirectory
             executable jextractBinary
             args arguments
         }
