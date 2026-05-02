@@ -19,6 +19,17 @@ This project allows executing Lua scripts from a Java application. It uses [Fore
 
 ## Development
 
+### Updating Lua
+
+Lua source code is checked in `lua/src/`. The following files are patched compared to the original version:
+
+* Added `lua/src/all_lua.h`
+* Modified `lua/src/Makefile` to build Lua as a shared library.
+
+### Enable Gradle Caching
+
+To speedup repeated builds, add `org.gradle.caching=true` to `~/.gradle/gradle.properties`.
+
 ### Native Interface
 
 Build scripts generate native interface classes in `build/generated/sources/jextract` using [Jextract](https://github.com/openjdk/jextract). Scripts download and cache Jextract automatically during the build.
