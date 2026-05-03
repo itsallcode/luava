@@ -11,7 +11,7 @@ public enum LuaType {
 
     private final int type;
 
-    private LuaType(final int type) {
+    LuaType(final int type) {
         this.type = type;
     }
 
