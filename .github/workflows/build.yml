@@ -54,6 +54,7 @@ jobs:
   build:
     needs: matrix-build
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - run: echo "Build successful"
       
