@@ -1,7 +1,7 @@
 package org.itsallcode.luava;
 
+@SuppressWarnings("serial")
 public class FunctionCallException extends LuaException {
-    private static final long serialVersionUID = 1L;
     private final String function;
     private final int errorCode;
     private final String message;

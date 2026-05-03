@@ -1,8 +1,7 @@
 package org.itsallcode.luava;
 
+@SuppressWarnings("serial")
 public class LuaException extends RuntimeException {
-    private static final long serialVersionUID = 1L;
-
     public LuaException(final String message) {
         super(message);
     }
